@@ -1,3 +1,21 @@
 {
+  "compilerOptions": {
+    "baseUrl": "./src",
+    "paths": {
+      "@components/*": ["components/*"],
+      "@screens/*": ["screens/*"],
+      "@utils/*": ["utils/*"],
+      "@assets/*": ["assets/*"],
+      "@hooks/*": ["hooks/*"],
+      "@contexts/*": ["contexts/*"],
+      "@navigation/*": ["navigation/*"],
+      "@constants/*": ["constants/*"],
+      "@services/*": ["services/*"],
+      "@storage/*": ["storage/*"],
+      "@axios/*": ["axios/*"]
+    },
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext"
+  },
   "extends": "@react-native/typescript-config"
 }

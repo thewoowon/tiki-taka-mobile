@@ -1,4 +1,7 @@
 const { getDefaultConfig, mergeConfig } = require('@react-native/metro-config');
+const {
+  wrapWithReanimatedMetroConfig,
+} = require('react-native-reanimated/metro-config');
 
 /**
  * Metro configuration
@@ -6,6 +9,12 @@ const { getDefaultConfig, mergeConfig } = require('@react-native/metro-config');
  *
  * @type {import('@react-native/metro-config').MetroConfig}
  */
-const config = {};
+const baseConfig = getDefaultConfig(__dirname);
 
-module.exports = mergeConfig(getDefaultConfig(__dirname), config);
+// 빈 config를 wrapWithReanimated로 래핑
+const reanimatedConfig = wrapWithReanimatedMetroConfig({});
+
+// 그 다음 Storybook으로 또 래핑
+const finalConfig = mergeConfig(baseConfig, reanimatedConfig);
+
+module.exports = finalConfig;

@@ -1,48 +1,114 @@
 {
   "images" : [
     {
-      "idiom" : "iphone",
+      "filename" : "tiki-taka-logo40.png",
+      "idiom" : "universal",
+      "platform" : "ios",
       "scale" : "2x",
       "size" : "20x20"
     },
     {
-      "idiom" : "iphone",
+      "filename" : "tiki-taka-logo60.png",
+      "idiom" : "universal",
+      "platform" : "ios",
       "scale" : "3x",
       "size" : "20x20"
     },
     {
-      "idiom" : "iphone",
+      "filename" : "tiki-taka-logo58.png",
+      "idiom" : "universal",
+      "platform" : "ios",
       "scale" : "2x",
       "size" : "29x29"
     },
     {
-      "idiom" : "iphone",
+      "filename" : "tiki-taka-logo87.png",
+      "idiom" : "universal",
+      "platform" : "ios",
       "scale" : "3x",
       "size" : "29x29"
     },
     {
-      "idiom" : "iphone",
+      "filename" : "tiki-taka-logo76.png",
+      "idiom" : "universal",
+      "platform" : "ios",
+      "scale" : "2x",
+      "size" : "38x38"
+    },
+    {
+      "filename" : "tiki-taka-logo114.png",
+      "idiom" : "universal",
+      "platform" : "ios",
+      "scale" : "3x",
+      "size" : "38x38"
+    },
+    {
+      "filename" : "tiki-taka-logo80.png",
+      "idiom" : "universal",
+      "platform" : "ios",
       "scale" : "2x",
       "size" : "40x40"
     },
     {
-      "idiom" : "iphone",
+      "filename" : "tiki-taka-logo120 1.png",
+      "idiom" : "universal",
+      "platform" : "ios",
       "scale" : "3x",
       "size" : "40x40"
     },
     {
-      "idiom" : "iphone",
+      "filename" : "tiki-taka-logo120.png",
+      "idiom" : "universal",
+      "platform" : "ios",
       "scale" : "2x",
       "size" : "60x60"
     },
     {
-      "idiom" : "iphone",
+      "filename" : "tiki-taka-logo180.png",
+      "idiom" : "universal",
+      "platform" : "ios",
       "scale" : "3x",
       "size" : "60x60"
     },
     {
-      "idiom" : "ios-marketing",
-      "scale" : "1x",
+      "filename" : "tiki-taka-logo128.png",
+      "idiom" : "universal",
+      "platform" : "ios",
+      "scale" : "2x",
+      "size" : "64x64"
+    },
+    {
+      "filename" : "tiki-taka-logo192.png",
+      "idiom" : "universal",
+      "platform" : "ios",
+      "scale" : "3x",
+      "size" : "64x64"
+    },
+    {
+      "filename" : "tiki-taka-logo136.png",
+      "idiom" : "universal",
+      "platform" : "ios",
+      "scale" : "2x",
+      "size" : "68x68"
+    },
+    {
+      "filename" : "tiki-taka-logo152.png",
+      "idiom" : "universal",
+      "platform" : "ios",
+      "scale" : "2x",
+      "size" : "76x76"
+    },
+    {
+      "filename" : "tiki-taka-logo167.png",
+      "idiom" : "universal",
+      "platform" : "ios",
+      "scale" : "2x",
+      "size" : "83.5x83.5"
+    },
+    {
+      "filename" : "tiki-taka-logo1024.png",
+      "idiom" : "universal",
+      "platform" : "ios",
       "size" : "1024x1024"
     }
   ],

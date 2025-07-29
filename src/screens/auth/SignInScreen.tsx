@@ -1,0 +1,754 @@
+import React, { useEffect, useState, type ReactElement } from 'react';
+import {
+  SafeAreaView,
+  StatusBar,
+  StyleSheet,
+  Text,
+  View,
+  Platform,
+  ScrollView,
+  KeyboardAvoidingView,
+  Button,
+  Pressable,
+} from 'react-native';
+import { useAuth } from '@hooks/index';
+import SocialLoginButton from '@components/molecules/SocialLoginButton';
+import Icon from '@components/atoms/icon/Icon';
+import { getLastLoginProvider } from '@storage/lastLoginProvider';
+import type {
+  GetProfileResponse,
+  NaverLoginResponse,
+} from '@react-native-seoul/naver-login';
+import NaverLogin from '@react-native-seoul/naver-login';
+import {
+  logout as kakaoLogout,
+  login as kakaoLogin,
+  getProfile as getKakaoProfile,
+} from '@react-native-seoul/kakao-login';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import {
+  NAVER_CONSUMER_ID,
+  NAVER_CONSUMER_SECRET,
+  NAVER_APP_NAME,
+  SERVICE_URL_SCHEME,
+  API_PREFIX,
+} from '@env';
+import customAxios from '@axios/customAxios';
+import { useMutation } from '@tanstack/react-query';
+import { useToast } from '@contexts/ToastContext';
+import { login, logout } from '@services/auth';
+import { theme } from '@contexts/theme';
+import { appleAuth } from '@invertase/react-native-apple-authentication';
+
+const Gap = (): ReactElement => <View style={{ marginTop: 24 }} />;
+const ResponseJsonText = ({
+  json = {},
+  name,
+}: {
+  json?: object;
+  name: string;
+}): ReactElement => (
+  <View
+    style={{
+      padding: 12,
+      borderRadius: 16,
+      borderWidth: 1,
+      backgroundColor: '#242c3d',
+    }}
+  >
+    <Text style={{ fontSize: 20, fontWeight: 'bold', color: 'white' }}>
+      {name}
+    </Text>
+    <Text style={{ color: 'white', fontSize: 13, lineHeight: 20 }}>
+      {JSON.stringify(json, null, 4)}
+    </Text>
+  </View>
+);
+
+type IntroViewProps = {
+  result: string;
+};
+
+function IntroView({ result }: IntroViewProps): React.ReactElement {
+  return (
+    <View style={styles.container}>
+      <ScrollView>
+        <Text>{result}</Text>
+        <View style={{ height: 100 }} />
+      </ScrollView>
+    </View>
+  );
+}
+
+const SignInScreen = ({ navigation, route: _route }: any) => {
+  const { showToast } = useToast();
+  const [loginContext, setLoginContext] = useState<{
+    providerType: 'NAVER' | 'KAKAO' | 'GOOGLE' | 'APPLE' | 'NONE';
+    authCode: string;
+    name: string;
+    nickName: string;
+    phoneNumber: string;
+  }>({
+    providerType: 'NONE',
+    authCode: '',
+    nickName: '',
+    name: '',
+    phoneNumber: '',
+  });
+  const { setIsAuthenticated } = useAuth();
+  const [recentLogin, setRecentLogin] = useState<ProviderType | null>(null);
+  const [result, setResult] = useState<string>('');
+
+  const [success, setSuccessResponse] =
+    useState<NaverLoginResponse['successResponse']>();
+
+  const [failure, setFailureResponse] =
+    useState<NaverLoginResponse['failureResponse']>();
+  const [getProfileRes, setGetProfileRes] = useState<GetProfileResponse>();
+
+  // // APPROVED, REJECTED, WAITING
+  // const fetchMyInfo = async () => {
+  //   try {
+  //     const response = await customAxios.get(`${API_PREFIX}/user/me`);
+  //     if (response.status !== 200) {
+  //       throw new Error('Failed to fetch my info');
+  //     }
+
+  //     return response.data;
+  //   } catch (error) {
+  //     console.error('Error fetching my info:', error);
+  //     showToast('내 정보 조회에 실패했습니다.', 'error');
+
+  //     return null;
+  //   }
+  // };
+
+  // // 기존 유저인지 아닌지 검증하는 mutation
+  // const { mutateAsync: verifyMutation } = useMutation({
+  //   mutationFn: async (context: {
+  //     providerType: 'NAVER' | 'KAKAO' | 'GOOGLE' | 'APPLE';
+  //     authCode: string;
+  //   }) => {
+  //     const response = await customAxios.get(`${API_PREFIX}/verify/social`, {
+  //       params: {
+  //         providerType: context.providerType,
+  //         authCode: context.authCode,
+  //       },
+  //     });
+
+  //     if (response.status !== 200) {
+  //       throw new Error('Failed to verify social login');
+  //     }
+
+  //     return response.data;
+  //   },
+  // });
+
+  // const { mutateAsync: loginMutation } = useMutation({
+  //   mutationFn: async ({
+  //     providerType,
+  //     authCode,
+  //   }: {
+  //     providerType: ProviderType;
+  //     authCode: string;
+  //   }) => {
+  //     if (!loginContext) {
+  //       throw new Error('Login context is required to update user role');
+  //     }
+
+  //     const response = await customAxios.post(
+  //       `${API_PREFIX}/auth/oauth/login`,
+  //       {
+  //         providerType: providerType || 'KAKAO',
+  //         authCode: authCode || '',
+  //         name: '',
+  //         nickName: '',
+  //         phoneNumber: '',
+  //         // userRole: 'CUSTOMER',
+  //       },
+  //     );
+
+  //     if (response.status !== 200) {
+  //       throw new Error('Failed to login with social account');
+  //     }
+
+  //     console.log('Access token:', response.headers['authorization']);
+
+  //     await login({
+  //       access_token: response.headers['authorization'].replace('Bearer ', ''),
+  //       refresh_token: response.headers['refreshtoken'].replace(
+  //         'RefreshToken ',
+  //         '',
+  //       ),
+  //     });
+
+  //     return response.data;
+  //   },
+  //   onSuccess: () => {
+  //     console.log('Login successful');
+  //     // setIsAuthenticated(true);
+  //     // navigation.navigate('RegisterStore', {
+  //     //   screen: 'RegisterStoreStart',
+  //     // });
+  //   },
+  //   onError: error => {
+  //     console.error('Error during login:', error);
+  //     showToast('로그인에 실패했습니다. 다시 시도해주세요.', 'error');
+  //   },
+  // });
+
+  // const { mutate: guestMutation } = useMutation({
+  //   mutationFn: async () => {
+  //     const response = await customAxios.post(`${API_PREFIX}/auth/user/test`);
+
+  //     if (response.status !== 200) {
+  //       throw new Error('Failed to login with social account');
+  //     }
+
+  //     console.log('Access token:', response.headers['authorization']);
+
+  //     await login({
+  //       access_token: response.headers['authorization'].replace('Bearer ', ''),
+  //       refresh_token: response.headers['refreshtoken'].replace(
+  //         'RefreshToken ',
+  //         '',
+  //       ),
+  //     });
+
+  //     return response.data;
+  //   },
+  //   onSuccess: () => {
+  //     console.log('Login successful');
+  //     setIsAuthenticated(true);
+  //   },
+  //   onError: error => {
+  //     console.error('Error during login:', error);
+  //     showToast('게스트 로그인에 실패했습니다. 다시 시도해주세요.', 'error');
+  //   },
+  // });
+
+  // const handleLoginButtonClick = async (name: ProviderType) => {
+  //   if (name === 'KAKAO') {
+  //     await signInWithKakao();
+  //   } else if (name == 'GOOGLE') {
+  //     // 보류
+  //     // setIsAuthenticated(true);
+  //     navigation.navigate('SignUp', {
+  //       screen: 'UserRole',
+  //       params: {
+  //         providerType: 'NAVER',
+  //         authCode: 'accessToken',
+  //       },
+  //     });
+  //   } else if (name == 'NAVER') {
+  //     await signInWithNaver();
+  //   } else {
+  //     await signInWithApple();
+  //   }
+  // };
+
+  const socialLoginButton = (name: ProviderType) => {
+    return (
+      <View style={styles.socialLoginWrapper}>
+        {recentLogin === name && (
+          <View style={styles.recentLoginIndicator}>
+            <Icon
+              name="MessageBubbleIcon"
+              text="최근에 로그인했어요"
+              width={129}
+              height={42}
+            />
+          </View>
+        )}
+        <SocialLoginButton
+          name={name}
+          onPress={() => {
+            return;
+          }}
+        />
+      </View>
+    );
+  };
+
+  // const signInWithNaver = async (): Promise<void> => {
+  //   try {
+  //     const { failureResponse, successResponse } = await NaverLogin.login();
+  //     if (failureResponse?.isCancel) {
+  //       console.log('Naver login cancelled by user');
+  //       return;
+  //     }
+  //     if (!successResponse) {
+  //       console.error('Naver login failed:', failureResponse?.message);
+  //       showToast('네이버 로그인에 실패했습니다.', 'error');
+  //       return;
+  //     }
+  //     setSuccessResponse(successResponse);
+  //     setFailureResponse(failureResponse);
+  //     const profileResult = await NaverLogin.getProfile(
+  //       successResponse.accessToken,
+  //     );
+  //     setGetProfileRes(profileResult);
+
+  //     if (successResponse) {
+  //       const { accessToken } = successResponse;
+  //       const { email, nickname } = profileResult.response;
+  //       setLoginContext({
+  //         providerType: 'NAVER',
+  //         authCode: accessToken,
+  //         name: email || '',
+  //         nickName: nickname || '',
+  //         phoneNumber: '',
+  //       });
+  //       // 최근 로그인 정보 저장
+  //       await AsyncStorage.setItem('lastLoginProvider', 'NAVER');
+  //       setRecentLogin('NAVER');
+
+  //       console.log('Naver login success:', successResponse);
+
+  //       // 카카오 로그인 성공 후 사용자 정보 검증
+  //       const verifiedResult = await verifyMutation({
+  //         providerType: 'NAVER',
+  //         authCode: accessToken,
+  //       });
+
+  //       if (verifiedResult.data) {
+  //         // 기존 유저인 경우
+  //         await loginMutation({
+  //           providerType: 'NAVER',
+  //           authCode: accessToken,
+  //         });
+
+  //         const myInfo = await fetchMyInfo();
+
+  //         if (myInfo) {
+  //           console.log('My Info:', myInfo);
+  //           if (
+  //             myInfo.data.userRole === 'OWNER' &&
+  //             myInfo.data.approved === 'WAITING'
+  //           ) {
+  //             navigation.navigate('RegisterStore', {
+  //               screen: 'UnderReviewComplete',
+  //             });
+  //             return;
+  //           } else if (
+  //             myInfo.data.userRole === 'OWNER' &&
+  //             myInfo.data.approved === 'REJECTED'
+  //           ) {
+  //             navigation.navigate('RegisterStore', {
+  //               screen: 'RejectStore',
+  //             });
+  //             return;
+  //           }
+  //           setIsAuthenticated(true);
+  //         } else {
+  //           console.error('Failed to fetch my info after login');
+  //           showToast(
+  //             '내 정보 조회에 실패했습니다. 잠시 후 다시 시도해주세요.',
+  //             'error',
+  //           );
+
+  //           await NaverLogin.logout();
+  //           await logout();
+  //           return;
+  //         }
+  //       } else {
+  //         navigation.navigate('SignUp', {
+  //           screen: 'UserRole',
+  //           params: {
+  //             providerType: 'NAVER',
+  //             authCode: accessToken,
+  //           },
+  //         });
+  //       }
+  //     } else {
+  //       console.error('Naver login failed:', failureResponse?.message);
+  //       showToast('네이버 로그인에 실패했습니다.', 'error');
+  //       return;
+  //     }
+  //   } catch (error) {
+  //     console.error('naver login error:', error);
+  //     return;
+  //   }
+  // };
+
+  // const getProfile = async (): Promise<void> => {
+  //   try {
+  //     const profileResult = await NaverLogin.getProfile(success!.accessToken);
+  //     setGetProfileRes(profileResult);
+  //   } catch (e) {
+  //     setGetProfileRes(undefined);
+  //   }
+  // };
+
+  // const signInWithKakao = async (): Promise<void> => {
+  //   try {
+  //     //  토큰 가져오기
+  //     const token = await kakaoLogin();
+  //     const profile = await getKakaoProfile();
+
+  //     if (!token || !profile) {
+  //       showToast('카카오 로그인에 실패했습니다.', 'error');
+  //       console.error('카카오 로그인에 실패했습니다.');
+  //       return;
+  //     }
+
+  //     const { accessToken, refreshToken } = token;
+  //     const { email, nickname } = profile;
+
+  //     setLoginContext({
+  //       providerType: 'KAKAO',
+  //       authCode: accessToken,
+  //       name: '',
+  //       nickName: nickname || '',
+  //       phoneNumber: '',
+  //     });
+
+  //     await AsyncStorage.setItem('lastLoginProvider', 'KAKAO');
+  //     setRecentLogin('KAKAO');
+
+  //     console.log('Kakao login success:', token);
+
+  //     // 카카오 로그인 성공 후 사용자 정보 검증
+  //     const verifiedResult = await verifyMutation({
+  //       providerType: 'KAKAO',
+  //       authCode: accessToken,
+  //     });
+
+  //     if (verifiedResult.data) {
+  //       await loginMutation({
+  //         providerType: 'KAKAO',
+  //         authCode: accessToken,
+  //       });
+
+  //       const myInfo = await fetchMyInfo();
+
+  //       if (myInfo) {
+  //         console.log('My Info:', myInfo);
+  //         if (
+  //           myInfo.data.userRole === 'OWNER' &&
+  //           myInfo.data.approved === 'WAITING'
+  //         ) {
+  //           navigation.navigate('RegisterStore', {
+  //             screen: 'UnderReviewComplete',
+  //           });
+  //           return;
+  //         } else if (
+  //           myInfo.data.userRole === 'OWNER' &&
+  //           myInfo.data.approved === 'REJECTED'
+  //         ) {
+  //           navigation.navigate('RegisterStore', {
+  //             screen: 'RejectStore',
+  //           });
+  //           return;
+  //         }
+  //         setIsAuthenticated(true);
+  //       } else {
+  //         console.error('Failed to fetch my info after login');
+  //         showToast(
+  //           '내 정보 조회에 실패했습니다. 잠시 후 다시 시도해주세요.',
+  //           'error',
+  //         );
+
+  //         await kakaoLogout();
+  //         await logout();
+  //         return;
+  //       }
+  //     } else {
+  //       navigation.navigate('SignUp', {
+  //         screen: 'UserRole',
+  //         params: {
+  //           providerType: 'KAKAO',
+  //           authCode: accessToken,
+  //         },
+  //       });
+  //     }
+  //   } catch (err) {
+  //     console.error('kakao login err', err);
+  //   }
+  // };
+
+  // const signInWithApple = async () => {
+  //   try {
+  //     const appleAuthRequestResponse = await appleAuth.performRequest({
+  //       requestedOperation: appleAuth.Operation.LOGIN,
+  //       requestedScopes: [appleAuth.Scope.FULL_NAME, appleAuth.Scope.EMAIL],
+  //     });
+
+  //     if (!appleAuthRequestResponse.identityToken) {
+  //       throw new Error('Apple Sign-In failed - No identity token');
+  //     }
+
+  //     // Apple에서 받은 데이터
+  //     const { identityToken, user, authorizationCode } =
+  //       appleAuthRequestResponse;
+
+  //     const credentialState = await appleAuth.getCredentialStateForUser(user);
+
+  //     if (credentialState === appleAuth.State.AUTHORIZED) {
+  //       setLoginContext({
+  //         providerType: 'APPLE',
+  //         authCode: identityToken || '',
+  //         name: user || '',
+  //         nickName: '',
+  //         phoneNumber: '',
+  //       });
+
+  //       await AsyncStorage.setItem('lastLoginProvider', 'APPLE');
+  //       setRecentLogin('APPLE');
+
+  //       // 애플 로그인 성공 후 사용자 정보 검증
+  //       const verifiedResult = await verifyMutation({
+  //         providerType: 'APPLE',
+  //         authCode: identityToken || '',
+  //       });
+
+  //       if (verifiedResult.data) {
+  //         // 기존 유저인 경우
+  //         await loginMutation({
+  //           providerType: 'APPLE',
+  //           authCode: identityToken || '',
+  //         });
+
+  //         const myInfo = await fetchMyInfo();
+
+  //         if (myInfo) {
+  //           console.log('My Info:', myInfo);
+  //           if (
+  //             myInfo.data.userRole === 'OWNER' &&
+  //             myInfo.data.approved === 'WAITING'
+  //           ) {
+  //             navigation.navigate('RegisterStore', {
+  //               screen: 'UnderReviewComplete',
+  //             });
+  //             return;
+  //           } else if (
+  //             myInfo.data.userRole === 'OWNER' &&
+  //             myInfo.data.approved === 'REJECTED'
+  //           ) {
+  //             navigation.navigate('RegisterStore', {
+  //               screen: 'RejectStore',
+  //             });
+  //             return;
+  //           }
+  //           setIsAuthenticated(true);
+  //         } else {
+  //           console.error('Failed to fetch my info after login');
+  //           showToast(
+  //             '내 정보 조회에 실패했습니다. 잠시 후 다시 시도해주세요.',
+  //             'error',
+  //           );
+
+  //           await logout();
+  //           return;
+  //         }
+  //       } else {
+  //         navigation.navigate('SignUp', {
+  //           screen: 'UserRole',
+  //           params: {
+  //             providerType: 'APPLE',
+  //             authCode: identityToken || '',
+  //           },
+  //         });
+  //       }
+  //     } else {
+  //       console.error('Naver login failed:', credentialState);
+  //       showToast('애플 로그인에 실패했습니다.', 'error');
+  //     }
+  //   } catch (error: any) {
+  //     console.log(error);
+  //   }
+  // };
+
+  const signInAsAGuest = async () => {
+    // /api/v1/auth/user/test
+    // await guestMutation();
+    return;
+  };
+
+  // useEffect(() => {
+  //   const fetchLastLoginProvider = async () => {
+  //     const lastLoginProvider = await getLastLoginProvider();
+  //     if (lastLoginProvider) {
+  //       setRecentLogin(lastLoginProvider as ProviderType);
+  //     }
+  //   };
+
+  //   fetchLastLoginProvider();
+  // }, []);
+
+  // useEffect(() => {
+  //   NaverLogin.initialize({
+  //     appName: 'magambell',
+  //     consumerKey: NAVER_CONSUMER_ID,
+  //     consumerSecret: NAVER_CONSUMER_SECRET,
+  //     serviceUrlSchemeIOS: 'naverBVHH2fcyVFbjZQFCNMY7',
+  //     disableNaverAppAuthIOS: false,
+  //   });
+  // }, []);
+
+  return (
+    <View style={styles.container}>
+      <StatusBar
+        barStyle="dark-content"
+        translucent={true}
+        backgroundColor="transparent"
+      />
+      <View style={styles.topBackground} />
+      <View style={styles.bottomBackground} />
+      <SafeAreaView style={styles.safeArea}>
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          style={styles.keyboardAvoid}
+        >
+          <ScrollView
+            contentContainerStyle={styles.scrollContent}
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}
+          >
+            <View style={styles.contentWrapper}>
+              <View style={styles.contentContainer}>
+                <View style={styles.headerContainer}>
+                  <Text style={styles.title}>안녕하세요:)</Text>
+                  <Text style={styles.subtitle}>티키타카입니다.</Text>
+                  <Text style={styles.description}>
+                    로그인 후 티키타카의 다양한 서비스를 이용해보세요!
+                  </Text>
+                </View>
+                <View style={styles.bottomContainer}>
+                  <View style={styles.socialLoginContainer}>
+                    {socialLoginButton('KAKAO')}
+                    {socialLoginButton('NAVER')}
+                    {/* {socialLoginButton('GOOGLE')} */}
+                    {Platform.OS === 'ios' && socialLoginButton('APPLE')}
+                  </View>
+                </View>
+                <View style={styles.bottomContainer}>
+                  <Pressable
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}
+                    onPress={signInAsAGuest}
+                  >
+                    <Text
+                      style={[
+                        styles.text,
+                        {
+                          color: theme.colors.gray400,
+                          fontSize: 14,
+                        },
+                      ]}
+                    >
+                      - 로그인 없이 둘러보기 -
+                    </Text>
+                  </Pressable>
+                </View>
+              </View>
+            </View>
+          </ScrollView>
+        </KeyboardAvoidingView>
+      </SafeAreaView>
+    </View>
+  );
+};
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+  topBackground: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: '30%',
+    backgroundColor: theme.colors.tikiGreen,
+  },
+  bottomBackground: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: '70%',
+    backgroundColor: theme.colors.darkBg,
+  },
+  safeArea: {
+    flex: 1,
+  },
+  scrollContent: {
+    flexGrow: 1,
+  },
+  contentWrapper: {
+    flex: 1,
+    justifyContent: 'center',
+  },
+  contentContainer: {
+    backgroundColor: theme.colors.darkBg,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    paddingHorizontal: 20,
+    paddingTop: 40,
+    paddingBottom: Platform.select({
+      ios: 40,
+      android: 20,
+    }),
+  },
+  headerContainer: {
+    marginBottom: 40,
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    marginBottom: 8,
+    color: theme.colors.white,
+  },
+  subtitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    marginBottom: 8,
+    color: theme.colors.white,
+  },
+  description: {
+    fontSize: 14,
+    color: theme.colors.gray400,
+  },
+  bottomContainer: {
+    paddingTop: 20,
+  },
+  socialLoginContainer: {
+    justifyContent: 'center',
+    gap: 12,
+    marginBottom: Platform.select({
+      ios: 0,
+      android: 40,
+    }),
+  },
+  socialLoginWrapper: {
+    position: 'relative',
+  },
+  recentLoginIndicator: {
+    position: 'absolute',
+    top: -30,
+    right: 8,
+    zIndex: 1,
+  },
+  keyboardAvoid: {
+    flex: 1,
+  },
+  button: {
+    backgroundColor: '#FEE500',
+    borderRadius: 40,
+    borderWidth: 1,
+    width: 250,
+    height: 40,
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    marginTop: 10,
+  },
+  text: {
+    textAlign: 'center',
+  },
+});
+
+export default SignInScreen;

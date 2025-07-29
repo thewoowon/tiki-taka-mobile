@@ -77,9 +77,9 @@ android {
     buildToolsVersion rootProject.ext.buildToolsVersion
     compileSdk rootProject.ext.compileSdkVersion
 
-    namespace "com.tikitaka"
+    namespace "com.thewoowon.tikitaka"
     defaultConfig {
-        applicationId "com.tikitaka"
+        applicationId "com.thewoowon.tikitaka"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1

@@ -1,4 +1,4 @@
-package com.tikitaka
+package com.thewoowon.tikitaka
 
 import android.app.Application
 import com.facebook.react.PackageList

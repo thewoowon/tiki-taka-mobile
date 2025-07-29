@@ -2,10 +2,12 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>App Uses Non-Exempt Encryption</key>
+	<false/>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>en</string>
 	<key>CFBundleDisplayName</key>
-	<string>tikitaka</string>
+	<string>티키타카</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -26,14 +28,30 @@
 	<true/>
 	<key>NSAppTransportSecurity</key>
 	<dict>
-	  <!-- Do not change NSAllowsArbitraryLoads to true, or you will risk app rejection! -->
 		<key>NSAllowsArbitraryLoads</key>
 		<false/>
+		<key>NSAllowsArbitraryLoadsInWebContent</key>
+		<true/>
 		<key>NSAllowsLocalNetworking</key>
 		<true/>
 	</dict>
+	<key>NSCameraUsageDescription</key>
+	<string>사진 촬영 및 비디오 녹화를 위해 카메라 접근이 필요합니다.</string>
+	<key>NSFaceIDUsageDescription</key>
+	<string>Face ID를 사용하여 보안을 유지합니다.</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>앱이 백그라운드에서도 사용자의 위치를 업데이트하여 실시간으로 새로운 채용정보를 확인할 수 있도록 합니다.</string>
+	<key>NSLocationTemporaryUsageDescriptionDictionary</key>
+	<dict>
+		<key>commonPurpose</key>
+		<string>현재 위치를 사용하여 반경 10km 내에서 채용정보를 수집하고, 사용자가 보다 정확한 매칭을 받을 수 있도록 지원합니다.</string>
+	</dict>
 	<key>NSLocationWhenInUseUsageDescription</key>
-	<string></string>
+	<string>근처에서 진행 중인 채용을 추천해드리기 위해 위치 접근이 필요합니다.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>사진 라이브러리에서 미디어를 선택하기 위해 필요합니다.</string>
+	<key>RCTNewArchEnabled</key>
+	<true/>
 	<key>UILaunchStoryboardName</key>
 	<string>LaunchScreen</string>
 	<key>UIRequiredDeviceCapabilities</key>
@@ -43,10 +61,32 @@
 	<key>UISupportedInterfaceOrientations</key>
 	<array>
 		<string>UIInterfaceOrientationPortrait</string>
+		<string>UIInterfaceOrientationPortraitUpsideDown</string> <!-- 이거 추가해야 함 -->
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
 	<key>UIViewControllerBasedStatusBarAppearance</key>
 	<false/>
+	<key>UIAppFonts</key>
+	<array>
+		<string>Pretendard-Black.otf</string>
+		<string>Pretendard-Bold.otf</string>
+		<string>Pretendard-ExtraBold.otf</string>
+		<string>Pretendard-ExtraLight.otf</string>
+		<string>Pretendard-Light.otf</string>
+		<string>Pretendard-Medium.otf</string>
+		<string>Pretendard-Regular.otf</string>
+		<string>Pretendard-SemiBold.otf</string>
+		<string>Pretendard-Thin.otf</string>
+		<string>NotoSansKR-Black.ttf</string>
+		<string>NotoSansKR-Bold.ttf</string>
+		<string>NotoSansKR-ExtraBold.ttf</string>
+		<string>NotoSansKR-ExtraLight.ttf</string>
+		<string>NotoSansKR-Light.ttf</string>
+		<string>NotoSansKR-Medium.ttf</string>
+		<string>NotoSansKR-Regular.ttf</string>
+		<string>NotoSansKR-SemiBold.ttf</string>
+		<string>NotoSansKR-Thin.ttf</string>
+	</array>
 </dict>
 </plist>

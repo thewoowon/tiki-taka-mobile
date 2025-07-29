@@ -1,0 +1,77 @@
+{
+  "migIndex": 1,
+  "data": [
+    {
+      "path": "src/assets/fonts/NotoSansKR-Black.ttf",
+      "sha1": "2d18c106a455edbcb9dada71387511376f548b74"
+    },
+    {
+      "path": "src/assets/fonts/NotoSansKR-Bold.ttf",
+      "sha1": "ef48946255ea40691bfccc5c20c13c8fe97f908c"
+    },
+    {
+      "path": "src/assets/fonts/NotoSansKR-ExtraBold.ttf",
+      "sha1": "2a7d7a5d11e96fa8a40b396976a3ff1ff56d7a78"
+    },
+    {
+      "path": "src/assets/fonts/NotoSansKR-ExtraLight.ttf",
+      "sha1": "69416fd667b1d700eaf28fb29de630c0a31e471d"
+    },
+    {
+      "path": "src/assets/fonts/NotoSansKR-Light.ttf",
+      "sha1": "137d0733c5aeaa79769cb07b40afdd7a54e0340b"
+    },
+    {
+      "path": "src/assets/fonts/NotoSansKR-Medium.ttf",
+      "sha1": "b1042e018ccfc4ccd9e3929297ca0a9dbfbf1bd9"
+    },
+    {
+      "path": "src/assets/fonts/NotoSansKR-Regular.ttf",
+      "sha1": "83d3c03dc1fc16f2a5b8bbf929d4cc21a078282c"
+    },
+    {
+      "path": "src/assets/fonts/NotoSansKR-SemiBold.ttf",
+      "sha1": "69a4002611558a5321769c43d9d2b0126e9ec11e"
+    },
+    {
+      "path": "src/assets/fonts/NotoSansKR-Thin.ttf",
+      "sha1": "73b8f0bf8a839f3ac8d74dbf8d69e9836b78697c"
+    },
+    {
+      "path": "src/assets/fonts/Pretendard-Black.otf",
+      "sha1": "b9162985d25a21b393185c6139d283fba46fd739"
+    },
+    {
+      "path": "src/assets/fonts/Pretendard-Bold.otf",
+      "sha1": "bd4ac82cc26cf93c89cfbfbbba8825c5198b5b99"
+    },
+    {
+      "path": "src/assets/fonts/Pretendard-ExtraBold.otf",
+      "sha1": "ea07e7375c62c8386f77431f0f62a2cbdea34618"
+    },
+    {
+      "path": "src/assets/fonts/Pretendard-ExtraLight.otf",
+      "sha1": "4cc979a7edca4de7b9c392529493cdd0409d9dd1"
+    },
+    {
+      "path": "src/assets/fonts/Pretendard-Light.otf",
+      "sha1": "207a94ca77a34bba0b6cec41286bde3cbeecb7f1"
+    },
+    {
+      "path": "src/assets/fonts/Pretendard-Medium.otf",
+      "sha1": "eba1a37734a9c4fe3d84f540ce8d812d366b2b22"
+    },
+    {
+      "path": "src/assets/fonts/Pretendard-Regular.otf",
+      "sha1": "e205ef0a314d9da4e1a9382e0e65a25900a9ac7b"
+    },
+    {
+      "path": "src/assets/fonts/Pretendard-SemiBold.otf",
+      "sha1": "916a62152b7fd08ff43d239de04303a465521fe6"
+    },
+    {
+      "path": "src/assets/fonts/Pretendard-Thin.otf",
+      "sha1": "72cf55b4d2ea4adc75123f33ca839c10cabfaab4"
+    }
+  ]
+}
