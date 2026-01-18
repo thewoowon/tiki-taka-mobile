@@ -34,7 +34,7 @@ const PrimaryButton: React.FC<PrimaryButtonProps> = ({
       style={[
         styles.button,
         {
-          backgroundColor: disabled ? '#E5E5E5' : colors.tikiGreen,
+          backgroundColor: disabled ? '#E5E5E5' : colors.tikiDarkGreen,
           borderRadius: borderRadius.sm,
         },
         fullWidth && styles.fullWidth,
