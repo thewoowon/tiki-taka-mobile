@@ -4,7 +4,7 @@ import { Pressable, StyleSheet, Text, View, ViewStyle } from 'react-native';
 
 type HeaderProps = {
   onPress?: () => void;
-  title?: string;
+  title?: string | React.ReactNode;
   isBack?: boolean;
   rightButton?: React.ReactNode;
   rightButtonAction?: () => void;
@@ -36,7 +36,11 @@ const Header = ({
           </Pressable>
         </View>
       )}
-      <Text style={styles.headerText}>{title}</Text>
+      {typeof title === 'string' ? (
+        <Text style={styles.headerText}>{title}</Text>
+      ) : (
+        title
+      )}
       {/* 오른쪽 공간을 차지하기 위한 빈 View */}
       <View
         style={{
@@ -64,11 +68,12 @@ const styles = StyleSheet.create({
     paddingTop: 11,
     paddingBottom: 11,
     maxHeight: 56,
+    minHeight: 56,
     zIndex: 1,
-    backgroundColor: theme.colors.darkBg,
+    backgroundColor: theme.colors.lightBg,
   },
   headerText: {
-    color: '#181818',
+    color: 'white',
     fontSize: 18,
     fontFamily: 'Pretendard-SemiBold',
   },
