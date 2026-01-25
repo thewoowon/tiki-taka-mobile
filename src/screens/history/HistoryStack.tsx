@@ -1,20 +1,20 @@
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import ArticleScreen from './ArticleScreen';
+import HistoryScreen from './HistoryScreen';
 
 const Stack = createNativeStackNavigator();
 
-const ArticleStack = () => (
+const HistoryStack = () => (
   <Stack.Navigator
     screenOptions={{
       detachPreviousScreen: true,
     }}
   >
     <Stack.Screen
-      name="ArticleScreen"
-      component={ArticleScreen}
+      name="HistoryScreen"
+      component={HistoryScreen}
       options={{ headerShown: false }}
     />
   </Stack.Navigator>
 );
 
-export default ArticleStack;
+export default HistoryStack;

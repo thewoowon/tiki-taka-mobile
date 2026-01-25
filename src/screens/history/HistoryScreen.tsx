@@ -1,15 +1,8 @@
-import {
-  ExclamationMarkIcon,
-  TikiTakaLogoIcon,
-  XIcon,
-} from '@components/Icons';
 import { useTheme } from '@contexts/ThemeContext';
 import useAuth from '@hooks/useAuth';
-import { confirm } from '@utils/confirm';
 import React, { useState } from 'react';
 import {
   Alert,
-  Image,
   Modal,
   Pressable,
   SafeAreaView,
@@ -18,24 +11,32 @@ import {
   StyleSheet,
   Text,
   View,
-  ActivityIndicator,
 } from 'react-native';
-import { logout } from '@services/auth';
 import Animated from 'react-native-reanimated';
 import PrimaryButton from '@components/atoms/buttons/PrimaryButton';
 import { theme } from '@contexts/theme';
 import SecondaryButton from '@components/atoms/buttons/SecondaryButton';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import customAxios from '@axios/customAxios';
-import { useToast } from '@contexts/ToastContext';
-import { useFocusEffect } from '@react-navigation/native';
+import { useUser } from '@contexts/UserContext';
+import { ExclamationMarkIcon } from '@components/Icons';
 
-const MyPageScreen = ({ navigation, route }: any) => {
-  const { setIsAuthenticated } = useAuth();
+const HistoryScreen = ({ navigation, route }: any) => {
   const { scale, colors } = useTheme();
   const [open, setOpen] = useState(false);
-  const { showToast } = useToast();
-  const [selectedResume, setSelectedResume] = useState<ResumeType | null>(null);
+  const [continueOpen, setContinueOpen] = useState(false);
+  const { user } = useUser();
+  const [selectedInterview, setSelectedInterview] =
+    useState<HistoryElementType | null>(null);
+
+  const deleteResume = () => {
+    setOpen(true);
+  };
+
+  const continueInterview = (history: HistoryElementType) => {
+    setSelectedInterview(history);
+    setContinueOpen(true);
+  };
 
   const { data, isSuccess } = useQuery({
     queryKey: ['userProfile'],
@@ -48,19 +49,22 @@ const MyPageScreen = ({ navigation, route }: any) => {
     },
   });
 
-  const { data: resumeData, refetch } = useQuery({
-    queryKey: ['second', data?.userId],
+  const { data: interviewData, refetch } = useQuery({
+    queryKey: [data?.userId, 'interviews'],
     queryFn: async () => {
-      const response = await customAxios.get(`/resume/getResumeList`, {
+      const response = await customAxios.get(`/interview/getInterviewList`, {
         params: {
           userId: data?.userId,
         },
       });
+
       if (response.status !== 200) {
-        throw new Error('Failed to fetch my info');
+        throw new Error('프로필 정보를 가져오는 데 실패했습니다.');
       }
 
-      return response.data.data as ResumeType[];
+      console.log('response: ', response.data.data);
+
+      return response.data.data as HistoryElementType[];
     },
     enabled: isSuccess,
   });
@@ -68,11 +72,11 @@ const MyPageScreen = ({ navigation, route }: any) => {
   // 기존 유저인지 아닌지 검증하는 mutation
   const { mutateAsync: deleteMutation, isPending: deleteIsPending } =
     useMutation({
-      mutationFn: async (resumeId: number) => {
-        await customAxios.delete(`/resume/deleteResume`, {
+      mutationFn: async (interviewId: number) => {
+        await customAxios.delete(`/interview/deleteInterview`, {
           data: {
-            resumeId,
             userId: data?.userId,
+            interviewId,
           },
         });
       },
@@ -84,35 +88,13 @@ const MyPageScreen = ({ navigation, route }: any) => {
       },
     });
 
-  const deleteResume = async () => {
-    if (!selectedResume) return;
+  const deleteInterview = async () => {
+    if (!selectedInterview) return;
     setOpen(false);
 
-    await deleteMutation(selectedResume.resumeId);
+    await deleteMutation(selectedInterview.interviewId);
     refetch();
   };
-
-  const handleLogout = async () => {
-    const result = await confirm('로그아웃', '정말 로그아웃 하시겠어요?');
-    if (!result) {
-      return;
-    }
-    try {
-      await logout();
-      console.log('로그아웃 성공');
-      setIsAuthenticated(false);
-    } catch (error) {
-      console.error('로그아웃 실패:', error);
-      Alert.alert('로그아웃 실패', '다시 시도해주세요.');
-      return;
-    }
-  };
-
-  useFocusEffect(
-    React.useCallback(() => {
-      refetch();
-    }, []),
-  );
 
   return (
     <SafeAreaView style={styles.container}>
@@ -121,23 +103,6 @@ const MyPageScreen = ({ navigation, route }: any) => {
         backgroundColor="#6a51ae"
         translucent={false}
       />
-      {deleteIsPending && (
-        <Animated.View
-          style={{
-            ...StyleSheet.absoluteFillObject,
-            backgroundColor: 'rgba(0,0,0,0.8)',
-            zIndex: 2,
-            display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'center',
-          }}
-          onTouchStart={() => {
-            // initStates();
-          }}
-        >
-          <ActivityIndicator size="large" color={colors.tikiGreen} />
-        </Animated.View>
-      )}
       <ScrollView
         keyboardShouldPersistTaps="handled"
         contentContainerStyle={{
@@ -148,115 +113,80 @@ const MyPageScreen = ({ navigation, route }: any) => {
           style={[
             styles.flexColumnBox,
             {
-              marginBottom: 50,
               gap: 30,
             },
           ]}
         >
-          <Text style={styles.titleText}>내 정보</Text>
-          <View
-            style={[
-              styles.flexColumnBox,
-              {
-                backgroundColor: colors.darkBg,
-                borderRadius: 5,
-                paddingHorizontal: 20,
-                paddingVertical: 30,
-                alignItems: 'center',
-                gap: 20,
-              },
-            ]}
-          >
-            <View style={styles.imageBox}>
-              {data?.profileImage ? (
-                <View
-                  style={{
-                    width: 52,
-                    height: 52,
-                    borderRadius: 52,
-                    overflow: 'hidden',
-                    backgroundColor: 'white',
-                  }}
-                >
-                  <Image
-                    source={{ uri: data?.profileImage }}
-                    style={{ width: '100%', height: '100%' }}
-                    resizeMode="cover"
-                  />
-                </View>
-              ) : (
-                <TikiTakaLogoIcon width={32} height={32} />
-              )}
-            </View>
-            <View
-              style={[
-                styles.flexColumnBox,
-                {
-                  alignItems: 'center',
-                  gap: 6,
-                },
-              ]}
-            >
-              <Text style={styles.nameText}>{data?.name}</Text>
-              <Text style={styles.emailText}>{data?.email}</Text>
-            </View>
-            <Pressable style={styles.buttonBox} onPress={handleLogout}>
-              <Text style={styles.buttonText}>로그아웃</Text>
-            </Pressable>
-          </View>
-        </View>
-        <View
-          style={[
-            styles.flexColumnBox,
-            {
-              marginBottom: 50,
-              gap: 30,
-            },
-          ]}
-        >
-          <View>
-            <Text
-              style={[
-                styles.titleText,
-                {
-                  marginBottom: 6,
-                },
-              ]}
-            >
-              이력서 관리
-            </Text>
-            <Text style={styles.subtitleText}>
-              이력서는 최대 3개까지 등록 할 수 있어요.
-            </Text>
-          </View>
+          <Text style={styles.titleText}>면접 히스토리</Text>
           <View
             style={[
               styles.flexColumnBox,
               {
                 gap: 10,
-                alignItems: 'center',
               },
             ]}
           >
-            {resumeData?.map(resume => {
+            {interviewData?.map((history, index) => {
               return (
                 <View
-                  key={`resume-${resume.resumeId}`}
-                  style={styles.resumeBox}
+                  key={`history_${index}`}
+                  style={[
+                    styles.flexColumnBox,
+                    {
+                      backgroundColor: colors.darkBg,
+                      borderRadius: 10,
+                      padding: 20,
+                      gap: 10,
+                    },
+                  ]}
                 >
-                  <Text style={styles.resumeText}>{resume.fileName}</Text>
-                  <Pressable
-                    onPress={() => {
-                      setSelectedResume(resume);
-                      setOpen(true);
-                    }}
+                  <View
+                    style={[
+                      styles.flexColumnBox,
+                      {
+                        width: '100%',
+                        gap: 6,
+                      },
+                    ]}
                   >
-                    <XIcon color={colors.gray100} />
-                  </Pressable>
+                    <Text style={styles.nameText}>{history.title}</Text>
+                    <Text
+                      style={styles.rateText}
+                    >{`${history.useCnt} / ${history.totalCnt}`}</Text>
+                  </View>
+                  <Text style={styles.dateText}>
+                    마지막 진행일 : {history.regDate.split('T')[0]}
+                  </Text>
+                  <View
+                    style={[
+                      styles.flexRowBox,
+                      {
+                        width: '100%',
+                        gap: 10,
+                        justifyContent: 'flex-end',
+                        marginTop: 6,
+                      },
+                    ]}
+                  >
+                    <Pressable
+                      style={styles.buttonBox}
+                      onPress={deleteInterview}
+                    >
+                      <Text style={styles.buttonText}>삭제하기</Text>
+                    </Pressable>
+                    <Pressable
+                      style={styles.buttonFillBox}
+                      onPress={() => {
+                        continueInterview(history);
+                      }}
+                    >
+                      <Text style={styles.buttonText}>계속하기</Text>
+                    </Pressable>
+                  </View>
                 </View>
               );
             })}
-            {(!resumeData || resumeData.length === 0) && (
+            {(!interviewData || interviewData.length === 0) && (
               <View
                 style={[
                   styles.flexColumnBox,
@@ -269,10 +199,10 @@ const MyPageScreen = ({ navigation, route }: any) => {
                 <ExclamationMarkIcon />
                 <View>
                   <Text style={styles.subtitleText}>
-                    아직 등록된 이력서가 없어요.
+                    아직 등록된 인터뷰가 없어요.
                   </Text>
                   <Text style={styles.subtitleText}>
-                    면접을 위해 이력서를 등록해주세요.
+                    등록된 이력서로 면접을 진행해주세요.
                   </Text>
                 </View>
               </View>
@@ -280,21 +210,12 @@ const MyPageScreen = ({ navigation, route }: any) => {
           </View>
         </View>
       </ScrollView>
-      <PrimaryButton
-        title="새 이력서 등록"
-        onPress={() =>
-          navigation.navigate('FullScreens', {
-            screen: 'MyPageUploadAResumeScreen',
-          })
-        }
-        style={{ marginBottom: 20, marginHorizontal: 20 }}
-      />
       <Animated.View
         style={{
           ...StyleSheet.absoluteFillObject,
           backgroundColor: 'rgba(0,0,0,0.8)',
           zIndex: 2,
-          display: open ? 'flex' : 'none',
+          display: open || continueOpen ? 'flex' : 'none',
         }}
         onTouchStart={() => {
           // initStates();
@@ -315,7 +236,7 @@ const MyPageScreen = ({ navigation, route }: any) => {
           <View
             style={[styles.flexColumnBox, { gap: 6, alignItems: 'center' }]}
           >
-            <Text style={styles.modalTitle}>{selectedResume?.fileName}</Text>
+            <Text style={styles.modalTitle}>{selectedInterview?.title}</Text>
             <View style={[styles.flexColumnBox, { alignItems: 'center' }]}>
               <Text style={styles.modalSubtitle}>
                 이력서 파일을 정말 삭제할까요?
@@ -339,7 +260,63 @@ const MyPageScreen = ({ navigation, route }: any) => {
             />
             <PrimaryButton
               title="네"
-              onPress={deleteResume}
+              onPress={() => setOpen(false)}
+              style={{
+                flex: 1,
+              }}
+            />
+          </View>
+        </View>
+      </Modal>
+      <Modal visible={continueOpen} transparent animationType="fade">
+        <View
+          style={{
+            backgroundColor: colors.lightBg,
+            borderRadius: 15,
+            position: 'relative',
+            minWidth: 300,
+            margin: 'auto',
+            padding: 20,
+            gap: 20,
+          }}
+        >
+          <View style={[styles.flexColumnBox, { alignItems: 'center' }]}>
+            <Text style={styles.modalTitle}>{selectedInterview?.title}</Text>
+            <Text
+              style={[
+                styles.modalTitle,
+                {
+                  marginBottom: 6,
+                },
+              ]}
+            >
+              면접을 이어서 진행할까요?
+            </Text>
+            <View style={[styles.flexColumnBox, { alignItems: 'center' }]}>
+              <Text style={styles.modalSubtitle}>질문은 동일하지만,</Text>
+              <Text style={styles.modalSubtitle}>
+                이전에 답변한 내용은 초기화 돼요.
+              </Text>
+            </View>
+          </View>
+          <View
+            style={[
+              styles.flexRowBox,
+              {
+                gap: 10,
+              },
+            ]}
+          >
+            <SecondaryButton
+              title="처음부터"
+              onPress={() => setContinueOpen(false)}
+              style={{
+                flex: 1,
+              }}
+            />
+            <PrimaryButton
+              title="이어서 진행"
+              onPress={() => setContinueOpen(false)}
               style={{
                 flex: 1,
               }}
@@ -386,11 +363,17 @@ const styles = StyleSheet.create({
     lineHeight: 28,
     color: 'white',
   },
-  emailText: {
+  rateText: {
     fontSize: 14,
     fontFamily: 'Pretendard-Medium',
     lineHeight: 20,
     color: 'white',
+  },
+  dateText: {
+    fontSize: 14,
+    fontFamily: 'Pretendard-Regular',
+    lineHeight: 21,
+    color: theme.colors.gray400,
   },
   resumeBox: {
     width: '100%',
@@ -440,6 +423,15 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'white',
   },
+  buttonFillBox: {
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 5,
+    paddingHorizontal: 13,
+    paddingVertical: 9,
+    backgroundColor: theme.colors.tikiGreen,
+  },
   buttonText: {
     fontSize: 13,
     fontFamily: 'Pretendard-Medium',
@@ -459,4 +451,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default MyPageScreen;
+export default HistoryScreen;

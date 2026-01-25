@@ -14,7 +14,7 @@ export const AuthContext = createContext<AuthContextType | undefined>(
 export const AuthProvider: React.FC<{children: React.ReactNode}> = ({
   children,
 }) => {
-  const [isAuthenticated, setIsAuthenticated] = useState(true);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   const initializeAuth = async () => {
     try {

@@ -1,6 +1,6 @@
 import axios from 'axios';
-import {Platform} from 'react-native';
-import {API_PREFIX, API_URL} from '@env';
+import { Platform } from 'react-native';
+import { API_PREFIX, API_URL } from '@env';
 import {
   getAccessToken,
   getRefreshToken,
@@ -15,7 +15,7 @@ const BASE_URL = Platform.select({
 
 const customAxios = axios.create({
   baseURL: BASE_URL,
-  timeout: 10000,
+  timeout: 60000,
   headers: {
     'Content-Type': 'application/json',
   },
@@ -123,14 +123,11 @@ customAxios.interceptors.response.use(
         isRefreshing = true;
 
         try {
-          const res = await customAxios.post(
-            `${API_PREFIX}/auth/token/reissue`,
-            {
-              refreshToken,
-            },
-          );
+          const res = await customAxios.post(`/token/refresh`, {
+            refreshToken,
+          });
 
-          const newAccessToken = res.headers['authorization']?.replace(
+          const newAccessToken = res.headers['accesstoken']?.replace(
             'Bearer ',
             '',
           );

@@ -8910,6 +8910,16 @@ __metadata:
   languageName: node
   linkType: hard
 
+"react-native-html-to-pdf@npm:^1.3.0":
+  version: 1.3.0
+  resolution: "react-native-html-to-pdf@npm:1.3.0"
+  peerDependencies:
+    react: "*"
+    react-native: "*"
+  checksum: 7b81026eed7c5a4bc325aea9fa22c6d972688c538b9b6cd0b7e4b318e3b84aa5d72941b3760b1428f9858c2c58a8351c1e4863b070bf79c46fa40adbf5ebd4b4
+  languageName: node
+  linkType: hard
+
 "react-native-image-picker@npm:^8.2.1":
   version: 8.2.1
   resolution: "react-native-image-picker@npm:8.2.1"
@@ -9038,6 +9048,13 @@ __metadata:
     react: "*"
     react-native: "*"
   checksum: 1beafec354c3a6bccfde1f9058961d5c9218492f1c68cf5b2bd454d157d4cf1e9047992570927dbcd97893e1e1c990563e4d034fe0d8700479ce2d37e037fe58
+  languageName: node
+  linkType: hard
+
+"react-native-share@npm:^12.2.2":
+  version: 12.2.2
+  resolution: "react-native-share@npm:12.2.2"
+  checksum: 44f0276110fdf6f45697ccefb2aa6b0dec90dc29a9b0114d3cbbbd6850cb2a0c0b9375d4a566fca4e605833f2859988bef019e4331ee483b4c7e5260935abb40
   languageName: node
   linkType: hard
 
@@ -10187,6 +10204,7 @@ __metadata:
     react-native-encrypted-storage: ^4.0.3
     react-native-geolocation-service: ^5.3.1
     react-native-gesture-handler: ^2.27.1
+    react-native-html-to-pdf: ^1.3.0
     react-native-image-picker: ^8.2.1
     react-native-image-viewing: ^0.2.2
     react-native-keychain: ^10.0.0
@@ -10196,6 +10214,7 @@ __metadata:
     react-native-reanimated-carousel: ^4.0.2
     react-native-safe-area-context: ^5.5.2
     react-native-screens: ^4.13.1
+    react-native-share: ^12.2.2
     react-native-skeleton-placeholder: ^5.2.4
     react-native-svg: ^15.12.0
     react-native-video: ^6.16.1

@@ -33,6 +33,8 @@ import {
   TikiTakaDeco2 as TikiTakaDeco2Part3,
   TikiTakaDeco3 as TikiTakaDeco3Part3,
 } from '@assets/deco/part3';
+import useAuth from '@hooks/useAuth';
+import { useUser } from '@contexts/UserContext';
 
 const { width, height } = Dimensions.get('window');
 
@@ -202,77 +204,85 @@ const DecoCarousel = ({ decos }: DecoCarouselProps) => {
 
 const MainScreen = ({ navigation, route }: any) => {
   const { colors } = useTheme();
+  const { isAuthenticated } = useAuth();
+  const { user } = useUser();
+
+  console.log('user: ', user);
+  console.log('isAuthenticated: ', isAuthenticated);
+
+  const goNext = () => {
+    if (!isAuthenticated) {
+      navigation.navigate('FullScreens', {
+        screen: 'MiniSignInScreen',
+      });
+    } else {
+      navigation.navigate('Interview');
+    }
+  };
+
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       <StatusBar
         barStyle="light-content"
         backgroundColor={colors.darkBg}
         translucent={false}
       />
-      <SafeAreaView style={styles.backgroundStyle}>
-        {/* 상단 헤더 */}
-        <MainHeader onPress={() => navigation.goBack()} rightButton={null} />
-        <View>
-          <VideoBackground />
-        </View>
-        <ScrollView
-          style={styles.scrollView}
-          keyboardShouldPersistTaps="handled"
+
+      {/* 상단 헤더 */}
+      <MainHeader onPress={() => navigation.goBack()} rightButton={null} />
+      <View>
+        <VideoBackground />
+      </View>
+      <ScrollView style={styles.scrollView} keyboardShouldPersistTaps="handled">
+        <View
+          style={{
+            flex: 1,
+            paddingTop: 50,
+            paddingBottom: 20,
+            paddingHorizontal: 20,
+            justifyContent: 'center',
+            alignItems: 'center',
+            gap: 50,
+          }}
         >
-          <View
-            style={{
-              flex: 1,
-              paddingTop: 50,
-              paddingBottom: 20,
-              paddingHorizontal: 20,
-              justifyContent: 'center',
-              alignItems: 'center',
-              gap: 50,
-            }}
+          <LinearGradient
+            start={{ x: 0.5, y: 1 }} // 중앙 상단
+            end={{ x: 1, y: 0.5 }} // 중앙 하단
+            locations={[0.3, 1]} // 시작과 끝 색상의 위치
+            colors={['#121212', '#2B2B2B']} // 시작과 끝 색상
+            style={styles.ball}
           >
-            <LinearGradient
-              start={{ x: 0.5, y: 1 }} // 중앙 상단
-              end={{ x: 1, y: 0.5 }} // 중앙 하단
-              locations={[0.3, 1]} // 시작과 끝 색상의 위치
-              colors={['#121212', '#2B2B2B']} // 시작과 끝 색상
-              style={styles.ball}
+            <View
+              style={{
+                display: 'flex',
+                justifyContent: 'center',
+                alignItems: 'center',
+              }}
             >
-              <View
-                style={{
-                  display: 'flex',
-                  justifyContent: 'center',
-                  alignItems: 'center',
-                }}
-              >
-                <Text style={styles.ballText}>면접부터 합격까지</Text>
-                <Text style={styles.ballText}>AI 면접 코칭, 티키타카</Text>
-                <View style={styles.ballDecoration1}>
-                  <Deco1Icon />
-                </View>
-                <View style={styles.ballDecoration2}>
-                  <Deco2Icon />
-                </View>
-                <View style={styles.ballDecoration3}>
-                  <Deco3Icon />
-                </View>
+              <Text style={styles.ballText}>면접부터 합격까지</Text>
+              <Text style={styles.ballText}>AI 면접 코칭, 티키타카</Text>
+              <View style={styles.ballDecoration1}>
+                <Deco1Icon />
               </View>
-            </LinearGradient>
-            <View>
-              <DecoCarousel decos={DECO_DATA} />
+              <View style={styles.ballDecoration2}>
+                <Deco2Icon />
+              </View>
+              <View style={styles.ballDecoration3}>
+                <Deco3Icon />
+              </View>
             </View>
+          </LinearGradient>
+          <View>
+            <DecoCarousel decos={DECO_DATA} />
           </View>
-        </ScrollView>
-        <PrimaryButton
-          title="티키타카 하러가기"
-          onPress={() =>
-            navigation.navigate('Interview', {
-              screen: 'InterviewScreen',
-            })
-          }
-          style={{ marginBottom: 20, marginHorizontal: 20 }}
-        />
-      </SafeAreaView>
-    </View>
+        </View>
+      </ScrollView>
+      <PrimaryButton
+        title="티키타카 하러가기"
+        onPress={goNext}
+        style={{ marginBottom: 20, marginHorizontal: 20 }}
+      />
+    </SafeAreaView>
   );
 };
 

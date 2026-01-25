@@ -6,7 +6,7 @@ import {
   getRefreshToken,
   deleteTokens,
 } from './token';
-import {API_PREFIX} from '@env';
+import { useUser } from '@contexts/UserContext';
 
 // 로그인 및 토큰 저장
 export const login = async ({
@@ -39,12 +39,9 @@ export const refreshAccessToken = async (): Promise<boolean> => {
   if (!refreshToken) return false;
 
   try {
-    const response = await customAxios.post(
-      `${API_PREFIX}/auth/refresh-token`,
-      {
-        refresh_token: refreshToken,
-      },
-    );
+    const response = await customAxios.post(`/token/refresh`, {
+      refresh_token: refreshToken,
+    });
     await setAccessToken(response.data.access_token);
     return true;
   } catch (error) {
@@ -59,8 +56,10 @@ export const validateAccessToken = async (): Promise<boolean> => {
       // accessToken이 없으면 무조건 false
       return false;
     }
-    const response = await customAxios.get(`${API_PREFIX}/user/me`);
-    return response.status === 200;
+    const response = await customAxios.get(`/user/getUserInfo`);
+    const isValid = response.status === 200;
+
+    return isValid;
   } catch (e: any) {
     // refreshToken에 의해 내부적으로 재시도 되었을 수 있음
     // 재발급 실패로 인해 authFailureCallback이 호출되면 그건 별도로 처리
@@ -76,7 +75,8 @@ export const validateAccessToken = async (): Promise<boolean> => {
 
       // 재발급 후 토큰이 있다면 다시 한번 호출해봄
       try {
-        const retry = await customAxios.get(`${API_PREFIX}/user/me`);
+        const retry = await customAxios.get(`/user/getUserInfo`);
+
         return retry.status === 200;
       } catch (e2) {
         return false;

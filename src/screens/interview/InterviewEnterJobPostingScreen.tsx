@@ -17,8 +17,15 @@ import { launchImageLibrary, Asset } from 'react-native-image-picker';
 import { useTheme } from '../../contexts/ThemeContext';
 import Header from '@components/layout/Header';
 import { theme } from '@contexts/theme';
-import { ImageIcon, JobPostingIcon } from '@components/Icons';
+import { ImageIcon, JobPostingIcon, MenuIcon } from '@components/Icons';
 import PrimaryButton from '@components/atoms/buttons/PrimaryButton';
+import { useInterview } from '@contexts/InterviewContext';
+import { SimulationQ } from '@components/modules';
+import { useGlobalMenu } from '@contexts/GlobalMenuContext';
+import customAxios from '@axios/customAxios';
+import { useMutation, useQuery } from '@tanstack/react-query';
+import { useUser } from '@contexts/UserContext';
+import { useToast } from '@contexts/ToastContext';
 
 const MAX_FILE_SIZE_MB = 50;
 const MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024;
@@ -28,6 +35,13 @@ const InterviewEnterJobPostingScreen = ({ navigation, route }: any) => {
   const [selectedImage, setSelectedImage] = useState<Asset | null>(null);
   const [text, setText] = useState<string>('');
   const { colors } = useTheme();
+  const { user } = useUser();
+
+  const { interviewForm, updateInterviewForm, updateInterviewFormObj } =
+    useInterview();
+  const { openMenu } = useGlobalMenu();
+
+  const { showToast } = useToast();
 
   const handlePickImage = async () => {
     const result = await launchImageLibrary({
@@ -63,16 +77,141 @@ const InterviewEnterJobPostingScreen = ({ navigation, route }: any) => {
     setSelectedImage(asset);
   };
 
-  const goNext = () => {
-    // 다음 버튼 클릭
-    if (inputMethod === 'image' && selectedImage) {
-      navigation.navigate('InterviewQuestionDisplayScreen');
-    }
+  const { data, isSuccess } = useQuery({
+    queryKey: ['userProfile'],
+    queryFn: async () => {
+      const response = await customAxios.get(`/user/getUserInfo`);
+      if (response.status !== 200) {
+        throw new Error('프로필 정보를 가져오는 데 실패했습니다.');
+      }
+      return response.data.data as UserType;
+    },
+  });
 
-    if (inputMethod === 'text' && text.length > 0) {
-      navigation.navigate('InterviewQuestionDisplayScreen');
-    }
+  const { mutate, isPending } = useMutation({
+    mutationFn: async () => {
+      const formData = new FormData();
+      if (inputMethod === 'image' && selectedImage) {
+        formData.append('file', selectedImage as File);
+        formData.append(
+          'interviewData',
+          JSON.stringify({
+            userId: data?.userId,
+            resumeId: interviewForm.resumeId,
+          }),
+        );
+      }
+      if (inputMethod === 'text') {
+        formData.append(
+          'interviewData',
+          JSON.stringify({
+            userId: data?.userId,
+            resumeId: interviewForm.resumeId,
+            recruitContent: text,
+          }),
+        );
+      }
+
+      const response = await customAxios.post(
+        '/interview/insertInterview',
+        formData,
+        {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+          timeout: 120000,
+        },
+      );
+
+      console.log('insertInterview: ', response.data);
+
+      return response.data;
+    },
+    onSuccess: data => {
+      if (data.code === '200') {
+        updateInterviewForm('interviewId', data.data.interviewId);
+        updateInterviewForm('title', data.data.title);
+
+        navigation.navigate('InterviewQuestionDisplayScreen');
+      } else {
+        showToast('인터뷰 생성에 실패했어요');
+      }
+    },
+    onError: error => {
+      console.log('인터뷰 생성에 실패했어요: ', error);
+      showToast('인터뷰 생성 중 에러가 발생했어요');
+    },
+  });
+
+  const goNext = () => {
+    updateInterviewFormObj({
+      inputMethod,
+      inputData: {
+        text,
+        image: selectedImage,
+      },
+    });
+
+    mutate();
   };
+
+  if (isPending) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <StatusBar
+          barStyle="dark-content"
+          backgroundColor="#6a51ae"
+          translucent={false}
+        />
+        <Header
+          onPress={() => navigation.goBack()}
+          title="질문 생성 중.."
+          rightButton={<MenuIcon />}
+          rightButtonAction={openMenu}
+        />
+        <ScrollView
+          key="isloading-scroll"
+          keyboardShouldPersistTaps="handled"
+          contentContainerStyle={{
+            flex: 1,
+            justifyContent: 'center',
+            padding: 20,
+          }}
+        >
+          <View
+            style={[
+              styles.flexColumnBox,
+              {
+                alignItems: 'center',
+                position: 'relative',
+              },
+            ]}
+          >
+            <View
+              style={{
+                width: '100%',
+                position: 'absolute',
+                top: -16,
+              }}
+            >
+              <Text style={styles.titleText}>질문을 생성하고 있어요</Text>
+              <Text
+                style={[
+                  styles.subtitleText,
+                  {
+                    marginBottom: 30,
+                  },
+                ]}
+              >
+                잠시만 기다려주세요.
+              </Text>
+            </View>
+            <SimulationQ />
+          </View>
+        </ScrollView>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container}>
@@ -95,135 +234,135 @@ const InterviewEnterJobPostingScreen = ({ navigation, route }: any) => {
             padding: 20,
           }}
         >
-        {inputMethod === null && (
-          <View style={[styles.flexColumnBox]}>
-            <Text style={styles.titleText}>
-              어떤 회사의 직무에 지원하시나요?
-            </Text>
-            <Text
-              style={[
-                styles.subtitleText,
-                {
-                  marginBottom: 30,
-                },
-              ]}
-            >
-              텍스트나 이미지 형태의 채용 공고를 넣을 수 있어요.
-            </Text>
-
-            <Pressable
-              style={[styles.flexRowBox, styles.button]}
-              onPress={() => setInputMethod('text')}
-              android_ripple={{ color: colors.gray200 }}
-            >
-              <JobPostingIcon />
-              <Text style={[styles.resumeText]} numberOfLines={1}>
-                텍스트로 붙여넣기
+          {inputMethod === null && (
+            <View style={[styles.flexColumnBox]}>
+              <Text style={styles.titleText}>
+                어떤 회사의 직무에 지원하시나요?
               </Text>
-            </Pressable>
-            <Pressable
-              style={[styles.flexRowBox, styles.button]}
-              onPress={() => setInputMethod('image')}
-              android_ripple={{ color: colors.gray200 }}
-            >
-              <ImageIcon />
-              <Text style={[styles.resumeText]} numberOfLines={1}>
-                이미지로 붙여넣기
-              </Text>
-            </Pressable>
-          </View>
-        )}
-
-        {inputMethod === 'text' && (
-          <View style={[styles.flexColumnBox]}>
-            <Text style={styles.titleText}>채용공고 내용을 입력해주세요</Text>
-            <Text style={styles.subtitleText}>
-              회사명, 팀, 직무, 주요업무, 자격요건, 우대사항
-            </Text>
-            <Text
-              style={[
-                styles.subtitleText,
-                {
-                  marginBottom: 30,
-                },
-              ]}
-            >
-              6가지 내용 중 입력 가능한 내용을 입력해주세요.
-            </Text>
-            {/* 텍스트 입력 컴포넌트 추가 예정 */}
-            <View
-              style={[
-                styles.multilineInputBox,
-                {
-                  borderColor:
-                    text.length > 0
-                      ? theme.colors.tikiGreen
-                      : theme.colors.gray400,
-                },
-              ]}
-            >
-              <TextInput
-                value={text}
-                onChangeText={setText}
-                style={styles.multilineInput}
-                multiline
-                placeholder="채용공고를 텍스트로 붙여넣기 해주세요.
-              (최대 1,500자)"
-                placeholderTextColor={colors.gray400}
-              />
-              <Text style={styles.multilineInputIndicator}>
-                {`(현재 ${text.length}자 / 총 1,500자)`}
-              </Text>
-            </View>
-          </View>
-        )}
-
-        {inputMethod === 'image' && (
-          <View style={[styles.flexColumnBox]}>
-            <Text style={styles.titleText}>
-              채용공고를 캡처하여 업로드해주세요
-            </Text>
-            <Text
-              style={[
-                styles.subtitleText,
-                {
-                  marginBottom: 30,
-                },
-              ]}
-            >
-              본인이 해당하는 직무부분만 캡처하여 넣어 주세요.
-            </Text>
-
-            {selectedImage ? (
-              <Pressable
-                onPress={handlePickImage}
-                style={styles.imagePreviewContainer}
+              <Text
+                style={[
+                  styles.subtitleText,
+                  {
+                    marginBottom: 30,
+                  },
+                ]}
               >
-                <Image
-                  source={{ uri: selectedImage.uri }}
-                  style={styles.imagePreview}
-                  resizeMode="contain"
-                />
-                <Text style={styles.changeImageText}>탭하여 이미지 변경</Text>
-              </Pressable>
-            ) : (
+                텍스트나 이미지 형태의 채용 공고를 넣을 수 있어요.
+              </Text>
+
               <Pressable
-                style={[styles.flexRowBox, styles.uploadBox]}
-                onPress={handlePickImage}
+                style={[styles.flexRowBox, styles.button]}
+                onPress={() => setInputMethod('text')}
+                android_ripple={{ color: colors.gray200 }}
+              >
+                <JobPostingIcon />
+                <Text style={[styles.resumeText]} numberOfLines={1}>
+                  텍스트로 붙여넣기
+                </Text>
+              </Pressable>
+              <Pressable
+                style={[styles.flexRowBox, styles.button]}
+                onPress={() => setInputMethod('image')}
                 android_ripple={{ color: colors.gray200 }}
               >
                 <ImageIcon />
-                <Text style={styles.uploadText}>이미지 선택하기</Text>
+                <Text style={[styles.resumeText]} numberOfLines={1}>
+                  이미지로 붙여넣기
+                </Text>
               </Pressable>
-            )}
+            </View>
+          )}
 
-            <Text style={styles.infoText}>
-              * 이미지는 최대{' '}
-              <Text style={styles.highlightText}>{MAX_FILE_SIZE_MB}MB</Text>까지
-              등록하실 수 있어요
-            </Text>
-          </View>
-        )}
+          {inputMethod === 'text' && (
+            <View style={[styles.flexColumnBox]}>
+              <Text style={styles.titleText}>채용공고 내용을 입력해주세요</Text>
+              <Text style={styles.subtitleText}>
+                회사명, 팀, 직무, 주요업무, 자격요건, 우대사항
+              </Text>
+              <Text
+                style={[
+                  styles.subtitleText,
+                  {
+                    marginBottom: 30,
+                  },
+                ]}
+              >
+                6가지 내용 중 입력 가능한 내용을 입력해주세요.
+              </Text>
+              {/* 텍스트 입력 컴포넌트 추가 예정 */}
+              <View
+                style={[
+                  styles.multilineInputBox,
+                  {
+                    borderColor:
+                      text.length > 0
+                        ? theme.colors.tikiGreen
+                        : theme.colors.gray400,
+                  },
+                ]}
+              >
+                <TextInput
+                  value={text}
+                  onChangeText={setText}
+                  style={styles.multilineInput}
+                  multiline
+                  placeholder="채용공고를 텍스트로 붙여넣기 해주세요.
+              (최대 1,500자)"
+                  placeholderTextColor={colors.gray400}
+                />
+                <Text style={styles.multilineInputIndicator}>
+                  {`(현재 ${text.length}자 / 총 1,500자)`}
+                </Text>
+              </View>
+            </View>
+          )}
+
+          {inputMethod === 'image' && (
+            <View style={[styles.flexColumnBox]}>
+              <Text style={styles.titleText}>
+                채용공고를 캡처하여 업로드해주세요
+              </Text>
+              <Text
+                style={[
+                  styles.subtitleText,
+                  {
+                    marginBottom: 30,
+                  },
+                ]}
+              >
+                본인이 해당하는 직무부분만 캡처하여 넣어 주세요.
+              </Text>
+
+              {selectedImage ? (
+                <Pressable
+                  onPress={handlePickImage}
+                  style={styles.imagePreviewContainer}
+                >
+                  <Image
+                    source={{ uri: selectedImage.uri }}
+                    style={styles.imagePreview}
+                    resizeMode="contain"
+                  />
+                  <Text style={styles.changeImageText}>탭하여 이미지 변경</Text>
+                </Pressable>
+              ) : (
+                <Pressable
+                  style={[styles.flexRowBox, styles.uploadBox]}
+                  onPress={handlePickImage}
+                  android_ripple={{ color: colors.gray200 }}
+                >
+                  <ImageIcon />
+                  <Text style={styles.uploadText}>이미지 선택하기</Text>
+                </Pressable>
+              )}
+
+              <Text style={styles.infoText}>
+                * 이미지는 최대{' '}
+                <Text style={styles.highlightText}>{MAX_FILE_SIZE_MB}MB</Text>
+                까지 등록하실 수 있어요
+              </Text>
+            </View>
+          )}
         </ScrollView>
       </KeyboardAvoidingView>
       {inputMethod === null ? null : (

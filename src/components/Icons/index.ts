@@ -86,3 +86,7 @@ export { default as ImageIcon } from './ImageIcon';
 export { default as DownloadIcon } from './DownloadIcon';
 export { default as InterviewerIcon } from './InterviewerIcon';
 export { default as SendIcon } from './SendIcon';
+export { default as TipIcon } from './TipIcon';
+export { default as HistoryIcon } from './HistoryIcon';
+export { default as DocumentIcon } from './DocumentIcon';
+export { default as ExclamationMarkIcon } from './ExclamationMarkIcon';

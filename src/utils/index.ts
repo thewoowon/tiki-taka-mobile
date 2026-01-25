@@ -5,3 +5,5 @@ export function parseDate(dateString: string): Date {
   }
   return date;
 }
+
+export { generateQuestionsPDF, downloadAndSharePDF } from './pdfGenerator';

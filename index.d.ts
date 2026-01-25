@@ -85,7 +85,6 @@ type ResultType = {
   title: string;
   status: number;
   regDate: string;
-  feedback: string;
   qaData: {
     answer: string;
     bestAnswer: string;
@@ -95,6 +94,22 @@ type ResultType = {
     qaId: number;
     question: string;
     regDate: string;
+  }[];
+};
+
+type QuestionsResponseType = {
+  interviewId: number;
+  userId: number;
+  totalCnt: number;
+  useCnt: number;
+  lastQaId: number;
+  qaData: {
+    interviewId: number;
+    qaId: number;
+    question: string;
+    answer: string;
+    regDate: string;
+    modifyDate: string;
   }[];
 };
 
@@ -113,4 +128,21 @@ type ArticleType = {
   guid: string;
   companyName: string;
   createdAt: string;
+};
+
+type UserType = {
+  userId: number;
+  name: string;
+  email: string;
+  regDate: string;
+  modifyDate: string;
+  thumbnailImage: string;
+  profileImage: string;
+};
+
+type ResumeType = {
+  resumeId: number;
+  fileName: string;
+  regDate: string;
+  content: string;
 };

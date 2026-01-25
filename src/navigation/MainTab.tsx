@@ -14,6 +14,8 @@ import {
   OrderIcon,
   HeartSolidIcon,
   TikiTakaLogoIcon,
+  HistoryIcon,
+  DocumentIcon,
 } from '../components/Icons';
 import { Alert, StyleSheet, Text } from 'react-native';
 import { useTheme } from '../contexts/ThemeContext';
@@ -27,9 +29,13 @@ import {
   InterviewResultScreen,
   InterviewUploadAResumeScreen,
 } from '../screens/interview';
+import { MyPageUploadAResumeScreen } from '../screens/myPage';
+import { MiniSignInScreen } from '../screens/auth';
 import useAuth from '@hooks/useAuth';
 import { useUser } from '@contexts/UserContext';
 import { logout } from '@services/auth';
+import { InterviewProvider } from '@contexts/InterviewContext';
+import HistoryStack from '@screens/history/HistoryStack';
 
 export type RootStackParamList = {
   Tabs: undefined;
@@ -50,6 +56,8 @@ export type FullScreenStackParamList = {
   InterviewChatScreen: undefined;
   InterviewResultScreen: undefined;
   InterviewUploadAResumeScreen: undefined;
+  MyPageUploadAResumeScreen: undefined;
+  MiniSignInScreen: undefined;
 };
 
 const RootStack = createStackNavigator<RootStackParamList>();
@@ -70,6 +78,8 @@ const HIDE_TABBAR_ON: Record<string, true> = {
   InterviewChatScreen: true,
   InterviewResultScreen: true,
   InterviewUploadAResumeScreen: true,
+  MyPageUploadAResumeScreen: true,
+  MiniSignInScreen: true,
 };
 
 const VISIBLE_TABBAR = {
@@ -201,7 +211,7 @@ const MainTab = () => {
             focused: boolean;
             color: string;
           }) => (
-            <OrderIcon
+            <DocumentIcon
               color={focused ? theme.colors.tikiGreen : theme.colors.gray100}
             />
           ),
@@ -226,6 +236,66 @@ const MainTab = () => {
             </Text>
           ),
         }}
+      />
+      <Tab.Screen
+        name="History"
+        component={HistoryStack}
+        options={{
+          headerShown: false,
+          tabBarIcon: ({
+            focused,
+            color,
+          }: {
+            focused: boolean;
+            color: string;
+          }) => (
+            <HistoryIcon
+              color={focused ? theme.colors.tikiGreen : theme.colors.gray100}
+            />
+          ),
+          tabBarLabel: ({
+            focused,
+            color,
+          }: {
+            focused: boolean;
+            color: string;
+          }) => (
+            <Text
+              style={[
+                styles.tabBarItemTextStyle,
+                {
+                  color: focused
+                    ? theme.colors.tikiGreen
+                    : theme.colors.gray100,
+                },
+              ]}
+            >
+              히스토리
+            </Text>
+          ),
+        }}
+        listeners={({ navigation }: { navigation: any; route: any }) => ({
+          tabPress: (e: any) => {
+            if (!isAuthenticated) {
+              e.preventDefault(); // 탭 이동 막기
+              Alert.alert(
+                '로그인이 필요합니다',
+                '마이페이지는 로그인 후 이용할 수 있어요.',
+                [
+                  { text: '취소', style: 'cancel' },
+                  {
+                    text: '로그인 하기',
+                    onPress: async () => {
+                      navigation.navigate('FullScreens', {
+                        screen: 'MiniSignInScreen',
+                      });
+                    },
+                  },
+                ],
+              );
+            }
+          },
+        })}
       />
       <Tab.Screen
         name="MyPage"
@@ -266,17 +336,19 @@ const MainTab = () => {
         }}
         listeners={({ navigation }: { navigation: any; route: any }) => ({
           tabPress: (e: any) => {
-            if (!isAuthenticated || !user?.email) {
+            if (!isAuthenticated) {
               e.preventDefault(); // 탭 이동 막기
               Alert.alert(
-                '로그인이 필요합니다(임시)',
+                '로그인이 필요합니다',
                 '마이페이지는 로그인 후 이용할 수 있어요.',
                 [
                   { text: '취소', style: 'cancel' },
                   {
                     text: '로그인 하기',
                     onPress: async () => {
-                      // 로그인 페이지
+                      navigation.navigate('FullScreens', {
+                        screen: 'MiniSignInScreen',
+                      });
                     },
                   },
                 ],
@@ -291,32 +363,42 @@ const MainTab = () => {
 
 function FullScreenStack() {
   return (
-    <FullStack.Navigator screenOptions={{ headerShown: false }}>
-      <FullStack.Screen
-        name="InterviewEnterJobPostingScreen"
-        component={InterviewEnterJobPostingScreen}
-      />
-      <FullStack.Screen
-        name="InterviewSelectAResumeScreen"
-        component={InterviewSelectAResumeScreen}
-      />
-      <FullStack.Screen
-        name="InterviewQuestionDisplayScreen"
-        component={InterviewQuestionDisplayScreen}
-      />
-      <FullStack.Screen
-        name="InterviewChatScreen"
-        component={InterviewChatScreen}
-      />
-      <FullStack.Screen
-        name="InterviewResultScreen"
-        component={InterviewResultScreen}
-      />
-      <FullStack.Screen
-        name="InterviewUploadAResumeScreen"
-        component={InterviewUploadAResumeScreen}
-      />
-    </FullStack.Navigator>
+    <InterviewProvider>
+      <FullStack.Navigator screenOptions={{ headerShown: false }}>
+        <FullStack.Screen
+          name="InterviewEnterJobPostingScreen"
+          component={InterviewEnterJobPostingScreen}
+        />
+        <FullStack.Screen
+          name="InterviewSelectAResumeScreen"
+          component={InterviewSelectAResumeScreen}
+        />
+        <FullStack.Screen
+          name="InterviewQuestionDisplayScreen"
+          component={InterviewQuestionDisplayScreen}
+        />
+        <FullStack.Screen
+          name="InterviewChatScreen"
+          component={InterviewChatScreen}
+        />
+        <FullStack.Screen
+          name="InterviewResultScreen"
+          component={InterviewResultScreen}
+        />
+        <FullStack.Screen
+          name="InterviewUploadAResumeScreen"
+          component={InterviewUploadAResumeScreen}
+        />
+        <FullStack.Screen
+          name="MyPageUploadAResumeScreen"
+          component={MyPageUploadAResumeScreen}
+        />
+        <FullStack.Screen
+          name="MiniSignInScreen"
+          component={MiniSignInScreen}
+        />
+      </FullStack.Navigator>
+    </InterviewProvider>
   );
 }
 

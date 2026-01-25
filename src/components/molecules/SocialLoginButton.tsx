@@ -80,7 +80,7 @@ const SocialLoginButton: React.FC<Props> = ({
           color: IconStyle[name].textColor,
         }}
       >
-        {IconStyle[name].text}로 로그인하기
+        {IconStyle[name].text}로 시작하기
       </Text>
     </Pressable>
   );

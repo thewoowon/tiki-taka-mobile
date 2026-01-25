@@ -23,15 +23,15 @@ import { theme } from '@contexts/theme';
 import PrimaryButton from '@components/atoms/buttons/PrimaryButton';
 import { useGlobalMenu } from '@contexts/GlobalMenuContext';
 import SecondaryButton from '@components/atoms/buttons/SecondaryButton';
-import { useToast } from '@contexts/ToastContext';
-import { useUser } from '@contexts/UserContext';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import customAxios from '@axios/customAxios';
+import { useToast } from '@contexts/ToastContext';
+import { useUser } from '@contexts/UserContext';
 
 const MAX_FILE_SIZE_MB = 50;
 const MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024;
 
-const InterviewUploadAResumeScreen = ({ navigation, route }: any) => {
+const MyPageUploadAResumeScreen = ({ navigation, route }: any) => {
   const [open, setOpen] = useState(false);
   const [selectedFile, setSelectedFile] =
     useState<DocumentPickerResponse | null>(null);
@@ -389,4 +389,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default InterviewUploadAResumeScreen;
+export default MyPageUploadAResumeScreen;

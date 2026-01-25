@@ -58,6 +58,7 @@
 		91D1476EE5AB4AB58CF2CFFD /* Pretendard-ExtraBold.otf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = "Pretendard-ExtraBold.otf"; path = "../src/assets/fonts/Pretendard-ExtraBold.otf"; sourceTree = "<group>"; };
 		BAED886D6CF147F8BD8B1FC4 /* NotoSansKR-Black.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = "NotoSansKR-Black.ttf"; path = "../src/assets/fonts/NotoSansKR-Black.ttf"; sourceTree = "<group>"; };
 		DFB8C11FE1544D96895D03F2 /* NotoSansKR-SemiBold.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = "NotoSansKR-SemiBold.ttf"; path = "../src/assets/fonts/NotoSansKR-SemiBold.ttf"; sourceTree = "<group>"; };
+		E9C937B02F1FB4F1000A4E7D /* tikitaka.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; name = tikitaka.entitlements; path = tikitaka/tikitaka.entitlements; sourceTree = "<group>"; };
 		ED297162215061F000B7C4FE /* JavaScriptCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = JavaScriptCore.framework; path = System/Library/Frameworks/JavaScriptCore.framework; sourceTree = SDKROOT; };
 		F3789CBD691140E49F32F1AB /* Pretendard-Light.otf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = "Pretendard-Light.otf"; path = "../src/assets/fonts/Pretendard-Light.otf"; sourceTree = "<group>"; };
 		F83BB69C3B5F4B95A25144B9 /* Pretendard-Medium.otf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = "Pretendard-Medium.otf"; path = "../src/assets/fonts/Pretendard-Medium.otf"; sourceTree = "<group>"; };
@@ -78,6 +79,7 @@
 		13B07FAE1A68108700A75B9A /* tikitaka */ = {
 			isa = PBXGroup;
 			children = (
+				E9C937B02F1FB4F1000A4E7D /* tikitaka.entitlements */,
 				13B07FB51A68108700A75B9A /* Images.xcassets */,
 				761780EC2CA45674006654EE /* AppDelegate.swift */,
 				13B07FB61A68108700A75B9A /* Info.plist */,
@@ -348,7 +350,8 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				CLANG_ENABLE_MODULES = YES;
-				CURRENT_PROJECT_VERSION = 1;
+				CODE_SIGN_ENTITLEMENTS = tikitaka/tikitaka.entitlements;
+				CURRENT_PROJECT_VERSION = 3;
 				DEVELOPMENT_TEAM = CXVHHLS2K4;
 				ENABLE_BITCODE = NO;
 				INFOPLIST_FILE = tikitaka/Info.plist;
@@ -359,7 +362,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.0;
+				MARKETING_VERSION = 1.1.0;
 				OTHER_LDFLAGS = (
 					"$(inherited)",
 					"-ObjC",
@@ -381,7 +384,8 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				CLANG_ENABLE_MODULES = YES;
-				CURRENT_PROJECT_VERSION = 1;
+				CODE_SIGN_ENTITLEMENTS = tikitaka/tikitaka.entitlements;
+				CURRENT_PROJECT_VERSION = 3;
 				DEVELOPMENT_TEAM = CXVHHLS2K4;
 				INFOPLIST_FILE = tikitaka/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "티키타카";
@@ -391,7 +395,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.0;
+				MARKETING_VERSION = 1.1.0;
 				OTHER_LDFLAGS = (
 					"$(inherited)",
 					"-ObjC",

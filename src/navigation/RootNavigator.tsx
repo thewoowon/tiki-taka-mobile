@@ -18,14 +18,15 @@ const RootNavigator = () => {
   }>;
   const navigation = useNavigation<NavigationProp>();
 
-  useEffect(() => {
-    if (isAuthenticated) {
-      navigation.reset({
-        index: 0,
-        routes: [{ name: 'Main', params: { screen: 'MainScreen' } }],
-      });
-    }
-  }, [isAuthenticated]);
+  // useEffect(() => {
+  //   console.log("왜 감지 하지 못하는가...?")
+  //   if (isAuthenticated) {
+  //     navigation.reset({
+  //       index: 0,
+  //       routes: [{ name: 'Tabs', params: { screen: 'MainScreen' } }],
+  //     });
+  //   }
+  // }, [isAuthenticated]);
 
   useEffect(() => {
     setAuthFailureHandler(() => {
@@ -35,7 +36,8 @@ const RootNavigator = () => {
     });
   }, []);
 
-  return isAuthenticated ? <MainTab /> : <AuthStack />;
+  // return isAuthenticated ? <MainTab /> : <AuthStack />;
+  return <MainTab />;
 };
 
 export default RootNavigator;

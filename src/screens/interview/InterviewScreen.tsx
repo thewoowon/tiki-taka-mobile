@@ -11,11 +11,27 @@ import { useTheme } from '../../contexts/ThemeContext';
 import LottieView from 'lottie-react-native';
 import Simulation01 from '@components/modules/Simulation01';
 import PrimaryButton from '@components/atoms/buttons/PrimaryButton';
+import useAuth from '@hooks/useAuth';
+import { useUser } from '@contexts/UserContext';
 // import Header from '@components/layout/Header';
 
 // <Header onPress={() => navigation.goBack()} title="메인화면" />
 
 const InterviewScreen = ({ navigation, route }: any) => {
+  const { isAuthenticated } = useAuth();
+  const { user } = useUser();
+
+  const goNext = () => {
+    if (!isAuthenticated) {
+      navigation.navigate('FullScreens', {
+        screen: 'MiniSignInScreen',
+      });
+    } else {
+      navigation.navigate('FullScreens', {
+        screen: 'InterviewSelectAResumeScreen',
+      });
+    }
+  };
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar
@@ -60,11 +76,7 @@ const InterviewScreen = ({ navigation, route }: any) => {
         <PrimaryButton
           title="면접 시작하기"
           style={{ marginTop: 40 }}
-          onPress={() =>
-            navigation.navigate('FullScreens', {
-              screen: 'InterviewSelectAResumeScreen',
-            })
-          }
+          onPress={goNext}
         />
       </View>
     </SafeAreaView>

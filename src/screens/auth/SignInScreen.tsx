@@ -294,7 +294,7 @@ const SignInScreen = ({ navigation, route: _route }: any) => {
                   <Text style={styles.title}>안녕하세요:)</Text>
                   <Text style={styles.subtitle}>티키타카입니다.</Text>
                   <Text style={styles.description}>
-                    로그인 후 티키타카의 다양한 서비스를 이용해보세요!
+                    티키타카 서비스를 이용하려면 로그인이 필요해요
                   </Text>
                 </View>
                 <View style={styles.bottomContainer}>
@@ -346,7 +346,7 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     height: '30%',
-    backgroundColor: theme.colors.tikiGreen,
+    backgroundColor: theme.colors.tikiDarkGreen,
   },
   bottomBackground: {
     position: 'absolute',

@@ -12,32 +12,66 @@ import Header from '@components/layout/Header';
 import { theme } from '@contexts/theme';
 import PrimaryButton from '@components/atoms/buttons/PrimaryButton';
 import { SimulationQ, SimulationR } from '@components/modules';
-import { DownloadIcon } from '@components/Icons';
-
-const QUESTIONS_LIST: Array<string> = [
-  '카카오페이를 선택한 동기와 흥미로운 경험에 대해 어떤 것이 있나요?',
-  '카카오페이가 추구하는 가치 중에서 가장 중요하게 생각하는 것은 무엇인가요?',
-  '디지털 금융 분야에서의 최근 트렌드와 그에 따른 도전에 대한 여러분의 시각은 무엇인가요?',
-  '카카오페이의 경쟁사와 차별화된 전략에 대해 어떻게 생각하시나요?',
-  '금융 서비스 개발 프로세스에서의 여러 경험과 성과에 대해 소개해주세요.',
-  '카카오페이에서의 팀 프로젝트 경험 중 가장 도전적이었던 부분은?',
-  '금융 서비스 개발 프로세스에서의 여러 경험과 성과에 대해 소개해주세요.',
-  '카카오페이에서의 팀 프로젝트 경험 중 가장 도전적이었던 부분은?',
-  '금융 서비스 개발 프로세스에서의 여러 경험과 성과에 대해 소개해주세요.',
-  '카카오페이에서의 팀 프로젝트 경험 중 가장 도전적이었던 부분은?',
-  '금융 서비스 개발 프로세스에서의 여러 경험과 성과에 대해 소개해주세요.',
-  '카카오페이에서의 팀 프로젝트 경험 중 가장 도전적이었던 부분은?',
-  '금융 서비스 개발 프로세스에서의 여러 경험과 성과에 대해 소개해주세요.',
-  '카카오페이에서의 팀 프로젝트 경험 중 가장 도전적이었던 부분은?',
-];
+import { DownloadIcon, MenuIcon } from '@components/Icons';
+import { downloadAndSharePDF } from '@utils/pdfGenerator';
+import { useGlobalMenu } from '@contexts/GlobalMenuContext';
+import { useMutation, useQuery } from '@tanstack/react-query';
+import customAxios from '@axios/customAxios';
+import { useInterview } from '@contexts/InterviewContext';
 
 const InterviewQuestionDisplayScreen = ({ navigation, route }: any) => {
-  const [isLoading, setIsLoading] = useState(false);
-  const [reIsLoading, setReIsLoading] = useState(false);
-  const [interviewQuestionsList, setInterviewQuestionsList] =
-    useState<Array<string>>(QUESTIONS_LIST);
+  const { openMenu } = useGlobalMenu();
 
   const { colors } = useTheme();
+  const { interviewForm } = useInterview();
+
+  const { data, isSuccess } = useQuery({
+    queryKey: ['userProfile'],
+    queryFn: async () => {
+      const response = await customAxios.get(`/user/getUserInfo`);
+      if (response.status !== 200) {
+        throw new Error('프로필 정보를 가져오는 데 실패했습니다.');
+      }
+      return response.data.data as UserType;
+    },
+  });
+
+  const { data: questions, refetch } = useQuery({
+    queryKey: ['questions', data?.userId, interviewForm.interviewId],
+    queryFn: async () => {
+      const response = await customAxios.get('/interview/getQaList', {
+        params: {
+          userId: data?.userId,
+          interviewId: interviewForm.interviewId,
+        },
+      });
+
+      if (response.status !== 200) {
+        throw new Error('질문을 가져오는 데 실패했습니다.');
+      }
+      return response.data.data as QuestionsResponseType;
+    },
+    enabled: isSuccess,
+  });
+
+  // /interview/generateQa
+  const { mutateAsync: generateQuestions, isPending: generateIsPending } =
+    useMutation({
+      mutationFn: async () => {
+        await customAxios.post(`/interview/generateQa`, {
+          data: {
+            userId: data?.userId,
+            interviewId: interviewForm.interviewId,
+          },
+        });
+      },
+      onSuccess: () => {
+        console.log('질문 재생성 성공!');
+      },
+      onError: () => {
+        console.log('질문 재생성 실패!');
+      },
+    });
 
   const goNext = () => {
     // 면접 시작 버튼 클릭
@@ -45,71 +79,17 @@ const InterviewQuestionDisplayScreen = ({ navigation, route }: any) => {
   };
 
   const regenerateQuestions = () => {
-    setReIsLoading(true);
-
-    setTimeout(() => {
-      setReIsLoading(false);
-    }, 3000);
+    generateQuestions();
   };
 
-  if (isLoading) {
-    return (
-      <SafeAreaView style={styles.container}>
-        <StatusBar
-          barStyle="dark-content"
-          backgroundColor="#6a51ae"
-          translucent={false}
-        />
-        <Header
-          onPress={() => navigation.goBack()}
-          title="질문 생성 중.."
-          rightButton={<DownloadIcon />}
-        />
-        <ScrollView
-          key="isloading-scroll"
-          keyboardShouldPersistTaps="handled"
-          contentContainerStyle={{
-            flex: 1,
-            justifyContent: 'center',
-            padding: 20,
-          }}
-        >
-          <View
-            style={[
-              styles.flexColumnBox,
-              {
-                alignItems: 'center',
-                position: 'relative',
-              },
-            ]}
-          >
-            <View
-              style={{
-                width: '100%',
-                position: 'absolute',
-                top: -16,
-              }}
-            >
-              <Text style={styles.titleText}>질문을 생성하고 있어요</Text>
-              <Text
-                style={[
-                  styles.subtitleText,
-                  {
-                    marginBottom: 30,
-                  },
-                ]}
-              >
-                잠시만 기다려주세요.
-              </Text>
-            </View>
-            <SimulationQ />
-          </View>
-        </ScrollView>
-      </SafeAreaView>
-    );
-  }
+  const handleDownloadPDF = () => {
+    downloadAndSharePDF({
+      companyName: interviewForm.title,
+      questions: questions?.qaData.map(question => question.question) || [],
+    });
+  };
 
-  if (reIsLoading) {
+  if (generateIsPending) {
     return (
       <SafeAreaView style={styles.container}>
         <StatusBar
@@ -120,7 +100,8 @@ const InterviewQuestionDisplayScreen = ({ navigation, route }: any) => {
         <Header
           onPress={() => navigation.goBack()}
           title="질문 생성 중.."
-          rightButton={<DownloadIcon />}
+          rightButton={<MenuIcon />}
+          rightButtonAction={openMenu}
         />
         <ScrollView
           key="reloading-scroll"
@@ -191,6 +172,7 @@ const InterviewQuestionDisplayScreen = ({ navigation, route }: any) => {
         onPress={() => navigation.goBack()}
         title="생성 질문 확인"
         rightButton={<DownloadIcon />}
+        rightButtonAction={handleDownloadPDF}
       />
       <ScrollView
         keyboardShouldPersistTaps="handled"
@@ -200,7 +182,7 @@ const InterviewQuestionDisplayScreen = ({ navigation, route }: any) => {
       >
         <View style={[styles.flexColumnBox]}>
           <Text style={styles.titleText}>
-            <Text>삼성전자</Text> 면접에
+            <Text>{interviewForm.title || 'unknown'}</Text> 면접에
           </Text>
           <Text
             style={[
@@ -225,11 +207,9 @@ const InterviewQuestionDisplayScreen = ({ navigation, route }: any) => {
           >
             생성된 질문은 [히스토리]에서 확인할 수 있어요.
           </Text>
-          {interviewQuestionsList.map((question, index) => (
+          {questions?.qaData.map((question, index) => (
             <View key={index} style={styles.questionBox}>
-              <Text style={styles.questionText}>
-                질문 {index + 1}. {question}
-              </Text>
+              <Text style={styles.questionText}>질문 {question.question}</Text>
             </View>
           ))}
         </View>

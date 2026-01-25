@@ -14,12 +14,11 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { PermissionProvider } from '@contexts/PermissionContext';
 import { ToastProvider } from '@contexts/ToastContext';
 import { ModalProvider, useModal } from '@contexts/ModalContext';
-import { AlertModal } from '@components/modules';
-import { useGoogleAuth } from '@thewoowon/google-rn';
+import { GlobalMenuProvider } from '@contexts/GlobalMenuContext';
+import { AlertModal, GlobalMenu } from '@components/modules';
+import GoogleAuthModule, { useGoogleAuth } from '@thewoowon/google-rn';
 import { UserProvider } from '@contexts/UserContext';
 
-// Google OAuth 설정
-const { GoogleAuthModule } = NativeModules;
 import {
   IOS_GOOGLE_CLIENT_ID,
   ANDROID_GOOGLE_CLIENT_ID,
@@ -52,6 +51,8 @@ function App(): React.JSX.Element {
     useGoogleAuth();
 
   useEffect(() => {
+    console.log('GOOGLE_CLIENT_ID: ' + GOOGLE_CLIENT_ID);
+    console.log('GOOGLE_REDIRECT_URI: ' + GOOGLE_REDIRECT_URI);
     // Google OAuth 설정 (앱 시작시 한번만)
     GoogleAuthModule.configure({
       clientId: GOOGLE_CLIENT_ID,
@@ -96,6 +97,7 @@ function App(): React.JSX.Element {
       >
         <UserProvider>
           <RootNavigator />
+          <GlobalMenu />
         </UserProvider>
       </NavigationContainer>
     </GestureHandlerRootView>
@@ -111,8 +113,10 @@ export default function RootApp() {
             <TabBarProvider>
               <PermissionProvider>
                 <ModalProvider>
-                  <App />
-                  <GlobalModalRenderer />
+                  <GlobalMenuProvider>
+                    <App />
+                    <GlobalModalRenderer />
+                  </GlobalMenuProvider>
                 </ModalProvider>
               </PermissionProvider>
             </TabBarProvider>

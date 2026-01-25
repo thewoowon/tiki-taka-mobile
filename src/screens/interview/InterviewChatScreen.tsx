@@ -1,7 +1,9 @@
 import React, { useEffect, useRef, useState } from 'react';
 import {
   Alert,
+  Animated,
   KeyboardAvoidingView,
+  Modal,
   Platform,
   Pressable,
   SafeAreaView,
@@ -15,52 +17,123 @@ import {
 import { useTheme } from '../../contexts/ThemeContext';
 import Header from '@components/layout/Header';
 import { theme } from '@contexts/theme';
-import { InterviewerIcon, SendIcon } from '@components/Icons';
-
-const QUESTIONS_LIST: Array<string> = [
-  '카카오페이를 선택한 동기와 흥미로운 경험에 대해 어떤 것이 있나요?',
-  '카카오페이가 추구하는 가치 중에서 가장 중요하게 생각하는 것은 무엇인가요?',
-  '디지털 금융 분야에서의 최근 트렌드와 그에 따른 도전에 대한 여러분의 시각은 무엇인가요?',
-  '카카오페이의 경쟁사와 차별화된 전략에 대해 어떻게 생각하시나요?',
-  '금융 서비스 개발 프로세스에서의 여러 경험과 성과에 대해 소개해주세요.',
-  '카카오페이에서의 팀 프로젝트 경험 중 가장 도전적이었던 부분은?',
-];
-
-const CHAT_STACK_TEST_LIST: Array<QuestionType> = [
-  {
-    role: 'interviewer',
-    interviewId: 0,
-    qaId: 0,
-    question: '안녕하세요~ 반가워요!, 먼저 자기소개 해주시겠어요?',
-    answer: '',
-    regDate: '',
-    modifyDate: '',
-  },
-];
+import { InterviewerIcon, MenuIcon, SendIcon } from '@components/Icons';
+import PrimaryButton from '@components/atoms/buttons/PrimaryButton';
+import SecondaryButton from '@components/atoms/buttons/SecondaryButton';
+import { SimulationR } from '@components/modules';
+import { useGlobalMenu } from '@contexts/GlobalMenuContext';
+import { useMutation, useQuery } from '@tanstack/react-query';
+import customAxios from '@axios/customAxios';
+import { useInterview } from '@contexts/InterviewContext';
+import { useToast } from '@contexts/ToastContext';
 
 const InterviewChatScreen = ({ navigation, route }: any) => {
-  const [interviewQuestionsList, setInterviewQuestionsList] =
-    useState<Array<string>>(QUESTIONS_LIST);
+  const [chatStack, setChatStack] = useState<Array<QuestionType>>([]);
 
-  const [chatStack, setChatStack] =
-    useState<Array<QuestionType>>(CHAT_STACK_TEST_LIST);
-
-  const [currentQuestion, setCurrentQuestion] = useState(0);
+  const [currentQuestion, setCurrentQuestion] = useState(1);
   const [inputHeight, setInputHeight] = useState(20);
+  const [open, setOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [lastBtnCk, setLastBtnCk] = useState(0);
 
-  const progress =
-    ((currentQuestion + 1) / interviewQuestionsList.length) * 100;
-
+  const { openMenu } = useGlobalMenu();
   const { colors } = useTheme();
   const [text, setText] = useState<string>('');
   const scrollViewRef = useRef<ScrollView>(null);
+
+  const { interviewForm } = useInterview();
+  const { showToast } = useToast();
+
+  const { data, isSuccess } = useQuery({
+    queryKey: ['userProfile'],
+    queryFn: async () => {
+      const response = await customAxios.get(`/user/getUserInfo`);
+      if (response.status !== 200) {
+        throw new Error('프로필 정보를 가져오는 데 실패했습니다.');
+      }
+      return response.data.data as UserType;
+    },
+  });
+
+  const { data: questions } = useQuery({
+    queryKey: ['questions', data?.userId, interviewForm.interviewId],
+    queryFn: async () => {
+      const response = await customAxios.get('/interview/getQaList', {
+        params: {
+          userId: data?.userId,
+          interviewId: interviewForm.interviewId,
+        },
+      });
+
+      if (response.status !== 200) {
+        throw new Error('질문을 가져오는 데 실패했습니다.');
+      }
+      return response.data.data as QuestionsResponseType;
+    },
+    enabled: isSuccess,
+  });
+
+  const qaList = questions?.qaData ?? [];
+  const progress = ((currentQuestion + 1) / (qaList.length + 1)) * 100;
+
+  // questions 로드 시 첫 번째 질문으로 chatStack 초기화
+  useEffect(() => {
+    if (qaList.length > 0 && chatStack.length === 0) {
+      setChatStack([
+        {
+          role: 'interviewer',
+          interviewId: qaList[0].interviewId,
+          qaId: qaList[0].qaId,
+          question: qaList[0].question,
+          answer: '',
+          regDate: qaList[0].regDate,
+          modifyDate: qaList[0].modifyDate,
+        },
+      ]);
+    }
+  }, [qaList]);
+
+  // /interview/insertAnswer
+  const { mutate, isPending } = useMutation({
+    mutationFn: (answerData: { qaId: number; answer: string }[]) => {
+      return customAxios({
+        method: 'POST',
+        url: '/interview/insertAnswer',
+        data: {
+          userId: data?.userId,
+          interviewId: interviewForm.interviewId,
+          lastBtnCk,
+          answerData,
+        },
+      }).then(res => res.data);
+    },
+    onSuccess: data => {
+      if (data.code === '200') {
+        showToast('답변 저장에 성공했어요.');
+        navigation.navigate('InterviewResultScreen');
+      } else {
+        showToast(data.message, 'info');
+      }
+    },
+    onError: error => {
+      showToast('답변 저장에 실패했어요. 다시 시도해 주세요.', 'error');
+    },
+  });
 
   const sendChat = () => {
     if (text.length === 0) {
       return;
     }
-    // 처음 자기소개 + index max => interviewQuestionsList.length
-    if (currentQuestion === interviewQuestionsList.length) {
+
+    if (currentQuestion > qaList.length) {
+      setOpen(true);
+      setText('');
+      setInputHeight(20);
+      return;
+    }
+
+    // 처음 자기소개 + index max => qaList.length
+    if (currentQuestion === qaList.length) {
       setChatStack(prev => [
         ...prev,
         {
@@ -73,6 +146,7 @@ const InterviewChatScreen = ({ navigation, route }: any) => {
           modifyDate: '',
         },
       ]);
+      setOpen(true);
     } else {
       setChatStack(prev => [
         ...prev,
@@ -88,8 +162,8 @@ const InterviewChatScreen = ({ navigation, route }: any) => {
         {
           role: 'interviewer',
           interviewId: 0,
-          qaId: currentQuestion,
-          question: interviewQuestionsList[currentQuestion],
+          qaId: qaList[currentQuestion]?.qaId ?? 0,
+          question: qaList[currentQuestion]?.question ?? '',
           answer: '',
           regDate: '',
           modifyDate: '',
@@ -105,28 +179,109 @@ const InterviewChatScreen = ({ navigation, route }: any) => {
     }, 100);
   };
 
-  useEffect(() => {
-    if (
-      currentQuestion > 0 &&
-      currentQuestion < interviewQuestionsList.length
-    ) {
+  const passChat = () => {
+    if (currentQuestion < qaList.length) {
       setChatStack(prev => [
         ...prev,
         {
           role: 'interviewer',
           interviewId: 0,
-          qaId: currentQuestion,
-          question: interviewQuestionsList[currentQuestion],
+          qaId: qaList[currentQuestion]?.qaId ?? 0,
+          question: qaList[currentQuestion]?.question ?? '',
           answer: '',
           regDate: '',
           modifyDate: '',
         },
       ]);
+      setText('');
+      setCurrentQuestion(prev => prev + 1);
+      setInputHeight(20);
       setTimeout(() => {
         scrollViewRef.current?.scrollToEnd({ animated: true });
       }, 100);
     }
-  }, [currentQuestion]);
+  };
+
+  const goNext = async () => {
+    const answerData = qaList.map(q => {
+      const found = chatStack.find(c => c.role === 'user' && c.qaId === q.qaId);
+      return { qaId: q.qaId, answer: found?.answer ?? '' };
+    });
+    mutate(answerData);
+    setOpen(false);
+  };
+
+  if (isPending) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <StatusBar
+          barStyle="dark-content"
+          backgroundColor="#6a51ae"
+          translucent={false}
+        />
+        <Header
+          onPress={() => navigation.goBack()}
+          title="결과 생성 중.."
+          rightButton={<MenuIcon />}
+          rightButtonAction={openMenu}
+        />
+        <ScrollView
+          key="reloading-scroll"
+          keyboardShouldPersistTaps="handled"
+          contentContainerStyle={{
+            flex: 1,
+            justifyContent: 'center',
+            padding: 20,
+          }}
+        >
+          <View
+            style={[
+              styles.flexColumnBox,
+              {
+                alignItems: 'center',
+                position: 'relative',
+              },
+            ]}
+          >
+            <View
+              style={{
+                width: '100%',
+                position: 'absolute',
+                top: -60,
+              }}
+            >
+              <Text
+                style={[
+                  styles.titleText,
+                  {
+                    marginBottom: 6,
+                  },
+                ]}
+              >
+                결과를 생성하고 있어요
+              </Text>
+              <Text style={[styles.subtitleText]}>
+                <Text style={styles.highlightText}>우원(카카오연동)</Text>
+                님의 답변과{' '}
+              </Text>
+              <Text
+                style={[
+                  styles.subtitleText,
+                  {
+                    marginBottom: 30,
+                  },
+                ]}
+              >
+                <Text style={styles.highlightText}>채용공고</Text>를 바탕으로
+                면접결과를 만들고 있어요.
+              </Text>
+            </View>
+            <SimulationR />
+          </View>
+        </ScrollView>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container}>
@@ -139,7 +294,8 @@ const InterviewChatScreen = ({ navigation, route }: any) => {
         onPress={() => navigation.goBack()}
         title={
           <Text style={styles.headerText}>
-            <Text style={styles.highlightText}>삼성전자</Text> 모의 면접 중
+            <Text style={styles.highlightText}>{interviewForm.title}</Text> 모의
+            면접 중
           </Text>
         }
         rightButton={
@@ -242,7 +398,7 @@ const InterviewChatScreen = ({ navigation, route }: any) => {
                       },
                     ]}
                   >
-                    삼성전자 면접관
+                    {interviewForm.title} 면접관
                   </Text>
                 </View>
                 <View style={styles.aiChatBox}>
@@ -255,12 +411,7 @@ const InterviewChatScreen = ({ navigation, route }: any) => {
                       },
                     ]}
                   >
-                    <Pressable
-                      style={styles.nextButton}
-                      onPress={() => {
-                        setCurrentQuestion(prev => prev + 1);
-                      }}
-                    >
+                    <Pressable style={styles.nextButton} onPress={passChat}>
                       <Text style={styles.nextButtonText}>질문 넘기기</Text>
                     </Pressable>
                   </View>
@@ -299,13 +450,71 @@ const InterviewChatScreen = ({ navigation, route }: any) => {
             />
             <Pressable
               onPress={sendChat}
-              disabled={currentQuestion > interviewQuestionsList.length}
+              // disabled={currentQuestion > interviewQuestionsList.length}
             >
               <SendIcon />
             </Pressable>
           </View>
         </View>
       </KeyboardAvoidingView>
+      <Animated.View
+        style={{
+          ...StyleSheet.absoluteFillObject,
+          backgroundColor: 'rgba(0,0,0,0.8)',
+          zIndex: 2,
+          display: open ? 'flex' : 'none',
+        }}
+        onTouchStart={() => {
+          // initStates();
+        }}
+      />
+      <Modal visible={open} transparent animationType="fade">
+        <View
+          style={{
+            backgroundColor: colors.lightBg,
+            borderRadius: 15,
+            position: 'relative',
+            width: 300,
+            margin: 'auto',
+            padding: 20,
+            gap: 20,
+          }}
+        >
+          <View
+            style={[styles.flexColumnBox, { gap: 10, alignItems: 'center' }]}
+          >
+            <Text style={styles.modalTitle}>면접을 종료할까요?</Text>
+            <Text style={styles.modalSubtitle}>
+              면접내용은 히스토리에서 확인 가능해요
+            </Text>
+          </View>
+          <View
+            style={[
+              styles.flexRowBox,
+              {
+                gap: 10,
+              },
+            ]}
+          >
+            <SecondaryButton
+              title="종료"
+              onPress={goNext}
+              style={{
+                flex: 1,
+              }}
+            />
+            <PrimaryButton
+              title="계속 진행"
+              onPress={() => {
+                setOpen(false);
+              }}
+              style={{
+                flex: 1,
+              }}
+            />
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 };
@@ -414,6 +623,32 @@ const styles = StyleSheet.create({
     fontFamily: 'Pretendard-Medium',
     lineHeight: 24,
     color: theme.colors.gray400,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontFamily: 'Pretendard-Bold',
+    lineHeight: 28,
+    color: 'white',
+  },
+  modalSubtitle: {
+    fontSize: 16,
+    fontFamily: 'Pretendard-Regular',
+    lineHeight: 24,
+    color: theme.colors.gray100,
+  },
+  titleText: {
+    color: 'white',
+    fontSize: 20,
+    lineHeight: 28,
+    fontFamily: 'Pretendard-Bold',
+    textAlign: 'center',
+  },
+  subtitleText: {
+    color: 'white',
+    fontSize: 16,
+    lineHeight: 24,
+    fontFamily: 'Pretendard-Regular',
+    textAlign: 'center',
   },
 });
 
