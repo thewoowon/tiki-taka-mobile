@@ -116,18 +116,20 @@ const MiniSignInScreen = ({ navigation, route }: any) => {
       name,
     }: {
       identityToken: string;
-      email: string;
+      email?: string | null;
       name?: string;
     }) => {
       const response = await customAxios.post(`/login/appleLogin`, {
         identityToken,
-        email,
-        name,
+        ...(email ? { email } : { email: '' }),
+        ...(name ? { name } : { name: '' }),
       });
 
       if (response.status !== 200) {
         throw new Error('Failed to login with Apple account');
       }
+
+      console.log('response: ', response);
 
       console.log('Apple Access token:', response.headers['authorization']);
 
@@ -182,63 +184,33 @@ const MiniSignInScreen = ({ navigation, route }: any) => {
             identityToken,
           });
 
-          // Apple은 email을 최초 로그인시에만 제공
-          // 이후 로그인에서는 identityToken만 제공됨
-          if (email) {
-            // 최초 로그인 또는 email이 있는 경우
-            // const verifyResponse = await verifyMutation({ email });
-            // console.log('Verify Response:', verifyResponse);
-            // if (verifyResponse.exists) {
-            //   // 기존 유저 로그인
-            //   await appleLoginMutation({
-            //     identityToken,
-            //     email,
-            //   });
-            // } else {
-            //   // 신규 유저 회원가입
-            //   await appleSignUpMutation({
-            //     identityToken,
-            //     email,
-            //     name: fullName
-            //       ? `${fullName.givenName || ''} ${
-            //           fullName.familyName || ''
-            //         }`.trim()
-            //       : undefined,
-            //   });
-            //   navigation.navigate('SignUp');
-            // }
-            await appleLoginMutation({
-              identityToken,
-              email,
-              name: fullName
-                ? `${fullName.givenName || ''} ${
-                    fullName.familyName || ''
-                  }`.trim()
-                : undefined,
-            });
-            const userData = await fetchMyInfo();
+          const displayName = fullName
+            ? `${fullName.givenName || ''} ${fullName.familyName || ''}`.trim()
+            : undefined;
 
-            console.log('userData: ', userData);
+          await appleLoginMutation({
+            identityToken,
+            email,
+            name: displayName || undefined,
+          });
 
-            if (!userData) throw new Error('Failed to fetch user data');
+          const userData = await fetchMyInfo();
 
-            setUser({
-              id: userData.userId,
-              email: userData.email,
-              nickname: userData.name,
-              profileImageUrl: userData.profileImage,
-            });
-            setIsAuthenticated(true);
-            navigation.reset({
-              index: 0,
-              routes: [{ name: 'Tabs', params: { screen: 'MainScreen' } }],
-            });
-          } else {
-            showToast(
-              '이메일을 가져오지 못했어요. 다시 시도해주세요.',
-              'error',
-            );
-          }
+          console.log('userData: ', userData);
+
+          if (!userData) throw new Error('Failed to fetch user data');
+
+          setUser({
+            id: userData.userId,
+            email: userData.email,
+            nickname: userData.name,
+            profileImageUrl: userData.profileImage,
+          });
+          setIsAuthenticated(true);
+          navigation.reset({
+            index: 0,
+            routes: [{ name: 'Tabs', params: { screen: 'MainScreen' } }],
+          });
         } catch (error) {
           console.error('Error during Apple social login flow:', error);
           showToast(
