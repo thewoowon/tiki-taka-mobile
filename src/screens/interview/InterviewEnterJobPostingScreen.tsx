@@ -92,7 +92,11 @@ const InterviewEnterJobPostingScreen = ({ navigation, route }: any) => {
     mutationFn: async () => {
       const formData = new FormData();
       if (inputMethod === 'image' && selectedImage) {
-        formData.append('file', selectedImage as File);
+        formData.append('file', {
+          uri: selectedImage.uri,
+          type: selectedImage.type || 'image/jpeg',
+          name: selectedImage.fileName || 'image.jpg',
+        } as any);
         formData.append(
           'interviewData',
           JSON.stringify({
@@ -134,6 +138,7 @@ const InterviewEnterJobPostingScreen = ({ navigation, route }: any) => {
 
         navigation.navigate('InterviewQuestionDisplayScreen');
       } else {
+        console.log(data);
         showToast('인터뷰 생성에 실패했어요');
       }
     },
