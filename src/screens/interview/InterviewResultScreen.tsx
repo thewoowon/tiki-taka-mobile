@@ -250,7 +250,9 @@ const InterviewResultScreen = ({ navigation, route }: any) => {
       }
 
       const html = generateResultHTML(interview);
-      const pdfFileName = `tikitaka_${interviewForm.title}_면접결과_${Date.now()}`;
+      const pdfFileName = `tikitaka_${
+        interviewForm.title
+      }_면접결과_${Date.now()}`;
 
       const file = await generatePDF({
         html,
@@ -483,6 +485,7 @@ const InterviewResultScreen = ({ navigation, route }: any) => {
           {interview?.qaData.map((data, index) => {
             return (
               <View
+                key={index}
                 style={[
                   styles.flexColumnBox,
                   {
