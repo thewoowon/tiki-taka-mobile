@@ -84,6 +84,29 @@ const MyPageScreen = ({ navigation, route }: any) => {
       },
     });
 
+  const { mutateAsync: withdrawMutation, isPending: withdrawIsPending } =
+    useMutation({
+      mutationFn: async () => {
+        const response = await customAxios.post(`/user/deleteUser`);
+        if (response.status !== 200) {
+          throw new Error('회원 탈퇴에 실패했습니다.');
+        }
+      },
+      onSuccess: async () => {
+        await logout();
+        setIsAuthenticated(false);
+        showToast('회원 탈퇴가 완료되었습니다.', 'success');
+        navigation.reset({
+          index: 0,
+          routes: [{ name: 'Tabs', params: { screen: 'MainScreen' } }],
+        });
+      },
+      onError: error => {
+        console.error('회원 탈퇴 실패:', error);
+        showToast('회원 탈퇴에 실패했습니다. 다시 시도해주세요.', 'error');
+      },
+    });
+
   const deleteResume = async () => {
     if (!selectedResume) return;
     setOpen(false);
@@ -108,6 +131,22 @@ const MyPageScreen = ({ navigation, route }: any) => {
     }
   };
 
+  const handleWithdraw = async () => {
+    const result = await confirm(
+      '회원 탈퇴',
+      '정말 탈퇴하시겠어요? 이 작업은 되돌릴 수 없어요.',
+    );
+    if (!result) {
+      return;
+    }
+
+    try {
+      await withdrawMutation();
+    } catch (error) {
+      console.error('회원 탈퇴 중 오류:', error);
+    }
+  };
+
   useFocusEffect(
     React.useCallback(() => {
       refetch();
@@ -121,7 +160,7 @@ const MyPageScreen = ({ navigation, route }: any) => {
         backgroundColor="#6a51ae"
         translucent={false}
       />
-      {deleteIsPending && (
+      {(deleteIsPending || withdrawIsPending) && (
         <Animated.View
           style={{
             ...StyleSheet.absoluteFillObject,
@@ -200,9 +239,17 @@ const MyPageScreen = ({ navigation, route }: any) => {
               <Text style={styles.nameText}>{data?.name}</Text>
               <Text style={styles.emailText}>{data?.email}</Text>
             </View>
-            <Pressable style={styles.buttonBox} onPress={handleLogout}>
-              <Text style={styles.buttonText}>로그아웃</Text>
-            </Pressable>
+            <View style={styles.accountActionContainer}>
+              <Pressable style={styles.buttonBox} onPress={handleLogout}>
+                <Text style={styles.buttonText}>로그아웃</Text>
+              </Pressable>
+              <Pressable
+                style={styles.deleteButtonBox}
+                onPress={handleWithdraw}
+              >
+                <Text style={styles.deleteButtonText}>회원 탈퇴</Text>
+              </Pressable>
+            </View>
           </View>
         </View>
         <View
@@ -444,6 +491,30 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontFamily: 'Pretendard-Medium',
     color: 'white',
+  },
+  accountActionContainer: {
+    width: '100%',
+    gap: 12,
+    alignItems: 'center',
+    marginTop: 8,
+    display: 'flex',
+    flexDirection: 'row',
+    justifyContent: 'center',
+  },
+  deleteButtonBox: {
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 5,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderWidth: 1,
+    borderColor: theme.colors.errorRed,
+  },
+  deleteButtonText: {
+    fontSize: 13,
+    fontFamily: 'Pretendard-Medium',
+    color: theme.colors.errorRed,
   },
   modalTitle: {
     fontSize: 20,
